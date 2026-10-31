@@ -5,7 +5,10 @@ function Format-Packet {
     #>
     [CmdletBinding()]
     param([Parameter(Mandatory, ValueFromPipeline)][byte[]]$Packet)
-    process {
+    begin { $all = [System.Collections.Generic.List[byte]]::new() }
+    process { $all.AddRange($Packet) }
+    end {
+        $Packet = $all.ToArray()
         for ($o = 0; $o -lt $Packet.Length; $o += 16) {
             $n = [Math]::Min(16, $Packet.Length - $o)
             $slice = $Packet[$o..($o + $n - 1)]
