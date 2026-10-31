@@ -36,7 +36,11 @@ function Send-BgpUpdate {
         if (-not ($nl.Count -or $wd.Count)) { continue }
         $fp = $p.Clone()
         if ($nl.Count) {
-            if (-not $fp.ContainsKey('AsPath')) { $fp.AsPath = [uint32[]]@($S.Config.LocalAS) }
+            $peerAs = if ($S.PeerOpen) { $S.PeerOpen.Asn } else { $S.Config.RemoteAS }
+            $ibgp = $peerAs -and [uint32]$peerAs -eq [uint32]$S.Config.LocalAS
+            # iBGP (RFC 4271 5.1.2): no AS prepend, and LOCAL_PREF is carried (default 100)
+            if (-not $fp.ContainsKey('AsPath')) { $fp.AsPath = if ($ibgp) { [uint32[]]@() } else { [uint32[]]@($S.Config.LocalAS) } }
+            if ($ibgp -and -not $fp.ContainsKey('LocalPref')) { $fp.LocalPref = [uint32]100 }
             if ($fp.ContainsKey('NextHop')) {
                 $isV6Hop = $fp.NextHop.AddressFamily -eq 'InterNetworkV6'
                 if ($isV6Hop -ne $f.V6) { throw "-NextHop must be an $(if ($f.V6) { 'IPv6' } else { 'IPv4' }) address to advertise $(if ($f.V6) { 'IPv6' } else { 'IPv4' }) prefixes." }

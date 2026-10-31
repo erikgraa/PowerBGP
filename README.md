@@ -142,6 +142,21 @@ Single-hop BFD (RFC 5881, UDP 3784) requires the packet to arrive with TTL 255, 
 Start-BfdSession -Name nsx-bfd -RemoteAddress 10.0.0.2 -LocalAddress 10.0.0.9 -MultiHop
 ```
 
+### BFD authentication 🔐
+
+Authentication is opt-in (RFC 5880 section 6.7); without `-AuthType` packets are plain 24-byte control packets. Simple Password and Keyed SHA1 are supported. Packets that fail verification are dropped and counted in `AuthFailures`:
+
+```powershell
+Start-BfdSession -Name lab-bfd -RemoteAddress 192.168.1.1 -AuthType KeyedSHA1 -AuthKeyId 1 -AuthKey 's3cret'
+Get-BfdSession lab-bfd              # AuthType, AuthFailures
+```
+
+Only tested against itself (loopback) so far.
+
+### iBGP
+
+When the peer's AS equals `-LocalAS` the session is iBGP: advertisements carry an empty AS_PATH and a default `LOCAL_PREF` of 100 (override with `Send-BgpUpdate -LocalPref`). `Get-BgpSession` shows `Type`.
+
 ### Fault injection and crafted messages
 
 ```powershell
@@ -225,12 +240,28 @@ Each peer runs its finite state machine (Idle, Connect, Active, OpenSent, OpenCo
 
 Not yet tested against real gear: BGP toward NSX, Windows Server BGP, Cisco, IPv6 on a real router, and TCP-MD5 against a real peer. Reports are welcome.
 
+## 🗺️ TODO
+
+Ideas, roughly in the order I would tackle them:
+
+- Route reflector (RFC 4456): `-RouteReflectorClient`, `-ClusterId`, `ORIGINATOR_ID` and `CLUSTER_LIST`, plus a reflection engine
+- Outbound attribute controls on every advertisement: MED, local-pref, communities (including large and extended) and AS-path prepend
+- Route refresh (RFC 2918) and enhanced route refresh (RFC 7313)
+- ADD-PATH (RFC 7911)
+- BFD: initiate Poll sequences, and the remaining authentication types (Keyed MD5, Meticulous Keyed MD5, Meticulous Keyed SHA1)
+- BFD authentication in the Pode REST layer and UI
+- Event logging to a file (opt-in `-LogPath`, JSON lines)
+- API authentication for the Pode REST layer
+- More real-gear testing: BGP toward NSX, Windows Server BGP, Cisco, IPv6 and TCP-MD5
+- Other address families such as VPNv4 and EVPN
+- Allow-AS-in style inbound filter option
+
 ## 🚧 Limitations
 
 - IPv4 and IPv6 unicast only (no VPN, EVPN or other address families)
 - No route processing: learned routes are recorded, never installed
 - Graceful restart works as a helper for IPv4 and IPv6 unicast; there is no restarting-speaker mode that preserves forwarding state across a PowerShell restart, and the F bit is always advertised as set
-- BFD is asynchronous mode only; it answers a Poll with Final but never initiates one, and there is no authentication
+- BFD is asynchronous mode only; it answers a Poll with Final but never initiates one, and only Simple Password and Keyed SHA1 authentication exist
 - TCP-MD5 is Linux only and IPv4 only
 - Nothing persists across restarts except what you export yourself
 

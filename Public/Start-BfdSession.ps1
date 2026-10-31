@@ -22,8 +22,12 @@ function Start-BfdSession {
         [ipaddress]$LocalAddress,
         [uint32]$DesiredMinTxMs = 500,
         [uint32]$RequiredMinRxMs = 500,
-        [ValidateRange(1, 255)][int]$DetectMult = 3
+        [ValidateRange(1, 255)][int]$DetectMult = 3,
+        [ValidateSet('None', 'SimplePassword', 'KeyedSHA1')][string]$AuthType = 'None',
+        [ValidateRange(0, 255)][int]$AuthKeyId = 1,
+        [string]$AuthKey
     )
+    if ($AuthType -ne 'None' -and -not $AuthKey) { throw "-AuthKey is required with -AuthType $AuthType." }
     $default = if ($MultiHop) { 4784 } else { 3784 }
     if (-not $PSBoundParameters.ContainsKey('Port')) { $Port = $default }
     if (-not $PSBoundParameters.ContainsKey('ListenPort')) { $ListenPort = $default }
@@ -38,6 +42,7 @@ function Start-BfdSession {
                 RemoteAddress = $RemoteAddress; RemotePort = $Port; ListenPort = $ListenPort
                 LocalAddress = if ($LocalAddress) { $LocalAddress.ToString() } else { $null }
                 DesiredMinTx = $DesiredMinTxMs * 1000; RequiredMinRx = $RequiredMinRxMs * 1000; DetectMult = $DetectMult
+                AuthType = $AuthType; AuthKeyId = $AuthKeyId; AuthKey = $AuthKey
             }
             State              = 'Down'
             RemoteState        = $null
@@ -71,6 +76,8 @@ function Get-BfdSession {
             TxMs          = $S.Config.DesiredMinTx / 1000
             RxMs          = $S.Config.RequiredMinRx / 1000
             DetectMult    = $S.Config.DetectMult
+            AuthType      = if ($S.Config.AuthType) { $S.Config.AuthType } else { 'None' }
+            AuthFailures  = [int]$S.AuthFailures
             Sent          = $S.Sent
             Received      = $S.Received
             Suppressed    = [bool]$S.Suppress
@@ -105,7 +112,8 @@ function Resume-BfdSession {
         $c = $old.Config
         $la = if ($c.LocalAddress) { @{ LocalAddress = [ipaddress]$c.LocalAddress } } else { @{} }
         $null = Start-BfdSession -Name $Name -RemoteAddress $c.RemoteAddress -Port $c.RemotePort -ListenPort $c.ListenPort @la `
-            -DesiredMinTxMs ($c.DesiredMinTx / 1000) -RequiredMinRxMs ($c.RequiredMinRx / 1000) -DetectMult $c.DetectMult
+            -DesiredMinTxMs ($c.DesiredMinTx / 1000) -RequiredMinRxMs ($c.RequiredMinRx / 1000) -DetectMult $c.DetectMult `
+            -AuthType $(if ($c.AuthType) { $c.AuthType } else { 'None' }) -AuthKeyId $(if ($null -ne $c.AuthKeyId) { $c.AuthKeyId } else { 1 }) -AuthKey $c.AuthKey
         Get-BfdSession -Name $Name
     }
 }
@@ -123,7 +131,10 @@ function Update-BfdSession {
         [ipaddress]$LocalAddress,
         [uint32]$DesiredMinTxMs,
         [uint32]$RequiredMinRxMs,
-        [ValidateRange(1, 255)][int]$DetectMult
+        [ValidateRange(1, 255)][int]$DetectMult,
+        [ValidateSet('None', 'SimplePassword', 'KeyedSHA1')][string]$AuthType,
+        [ValidateRange(0, 255)][int]$AuthKeyId,
+        [string]$AuthKey
     )
     $S = (Get-PowerBgpRegistry).Bfd[$Name]
     if (-not $S) { throw "No such BFD session '$Name'." }
@@ -136,6 +147,8 @@ function Update-BfdSession {
     if ($PSBoundParameters.ContainsKey('DesiredMinTxMs')) { $c.DesiredMinTx = $DesiredMinTxMs * 1000 }
     if ($PSBoundParameters.ContainsKey('RequiredMinRxMs')) { $c.RequiredMinRx = $RequiredMinRxMs * 1000 }
     if ($PSBoundParameters.ContainsKey('DetectMult')) { $c.DetectMult = $DetectMult }
+    foreach ($k in 'AuthType', 'AuthKeyId', 'AuthKey') { if ($PSBoundParameters.ContainsKey($k)) { $c.$k = $PSBoundParameters[$k] } }
+    if ($c.AuthType -ne 'None' -and -not $c.AuthKey) { throw "-AuthKey is required with -AuthType $($c.AuthType)." }
     if ($wasRunning) { Resume-BfdSession -Name $Name } else { Get-BfdSession -Name $Name }
 }
 
