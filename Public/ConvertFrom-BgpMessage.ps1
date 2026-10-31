@@ -119,6 +119,14 @@ function ConvertFrom-BgpMessage {
                 }
             }
             $parts = @()
+            $r.EndOfRib = $null
+            if (-not $r.Nlri.Count -and -not $r.Withdrawn.Count) {
+                if ($attrs.Count -eq 0) { $r.EndOfRib = 'IPv4' }
+                elseif ($attrs.Count -eq 1 -and $attrs[0].Code -eq 15 -and $attrs[0].Value.Length -eq 3) {
+                    $r.EndOfRib = if ((Get-NetUInt $attrs[0].Value 0 2) -eq 2) { 'IPv6' } else { 'IPv4' }
+                }
+            }
+            if ($r.EndOfRib) { $parts += "End-of-RIB ($($r.EndOfRib))" }
             if ($r.Nlri.Count) { $parts += "NLRI $($r.Nlri -join ',')"; $parts += "NH $($r.NextHop)"; $parts += "AS_PATH $($r.AsPath -join ' ')" }
             if ($r.Withdrawn.Count) { $parts += "WD $($r.Withdrawn -join ',')" }
             if (-not $parts) { $parts = 'End-of-RIB / empty' }

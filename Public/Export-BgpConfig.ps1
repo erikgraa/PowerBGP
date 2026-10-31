@@ -11,6 +11,7 @@ function Export-BgpConfig {
         [ordered]@{
             Name = $S.Name; RemoteAddress = $c.RemoteAddress; RemoteAS = $c.RemoteAS; LocalAddress = $c.LocalAddress; AddressFamily = @($c.AddressFamily); LocalAS = $c.LocalAS
             RouterId = "$($c.RouterId)"; HoldTime = $c.HoldTime; Port = $c.Port; Passive = $c.Passive; Ttl = $c.Ttl
+            GracefulRestart = [bool]$c.GracefulRestart; RestartTime = $c.RestartTime
             AutoReconnect = $c.AutoReconnect; ReconnectDelay = $c.ReconnectDelay; ReconnectMaxDelay = $c.ReconnectMaxDelay
             Password = $c.Password; InboundDefault = $c.InboundDefault; InboundFilter = @($c.InboundFilter)
         }
@@ -35,6 +36,8 @@ function Import-BgpConfig {
         if ($p.Passive) { $a.Passive = $true }
         if ($p.Ttl) { $a.Ttl = [int]$p.Ttl }
         $a.AutoReconnect = [bool]$p.AutoReconnect
+        if ($p.GracefulRestart) { $a.GracefulRestart = $true }
+        if ($null -ne $p.RestartTime) { $a.RestartTime = [int]$p.RestartTime }
         if ($p.ReconnectDelay) { $a.ReconnectDelay = [int]$p.ReconnectDelay }
         if ($p.ReconnectMaxDelay) { $a.ReconnectMaxDelay = [int]$p.ReconnectMaxDelay }
         if ($p.Password) { $a.Password = $p.Password }

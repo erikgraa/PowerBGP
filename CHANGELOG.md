@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.0
+
+- Graceful Restart (RFC 4724): `-GracefulRestart` and `-RestartTime` on `Start-BgpSession` and `Update-BgpSession`; `New-BgpOpen -GracefulRestart -RestartTime -RestartFlag`
+- End-of-RIB: `New-BgpUpdate -EndOfRib [-AddressFamily]`; the parser reports `EndOfRib`; sessions send it after the replay
+- Learned routes are kept as stale when a Graceful Restart peer drops, and cleared on End-of-RIB or when the peer's restart time expires
+- `Get-BgpSession`: `GracefulRestart`, `RestartTime`, `PeerGracefulRestart`, `PeerRestartTime`, `StaleRoutes`; `Get-BgpRoute`: `Stale`
+- README lists the RFCs PowerBGP touches
+
 ## 0.6.0
 
 - `Start-BgpSession` now reconnects after a drop by default. Use `-AutoReconnect:$false` to stay down. The REST API and UI follow the same default.

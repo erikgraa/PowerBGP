@@ -10,6 +10,26 @@ $script:BgpCapNames = @{
 
 $script:BgpOrigins = @{ 0 = 'IGP'; 1 = 'EGP'; 2 = 'Incomplete' }
 
+function Get-BgpPeerGracefulRestart {
+    param($PeerOpen)
+    $cap = @($PeerOpen.Capabilities) | Where-Object Code -EQ 64 | Select-Object -First 1
+    if (-not $cap -or $cap.Value.Length -lt 4) { return $null }
+    $flags = [Convert]::ToInt32($cap.Value.Substring(0, 4), 16)
+    [pscustomobject]@{ RestartTime = $flags -band 0x0FFF; RestartFlag = [bool]($flags -band 0x8000) }
+}
+
+# Drops stale routes: all of a family after its End-of-RIB, everything once Restart Time has passed
+function Remove-BgpStaleRoute {
+    param($State, [ValidateSet('IPv4', 'IPv6')][string]$Family)
+    $dummy = $null
+    $expired = $State.StaleExpires -and (Get-Date) -ge $State.StaleExpires
+    foreach ($kv in @($State.Learned.GetEnumerator())) {
+        if (-not $kv.Value.Stale) { continue }
+        if ($expired -or ($Family -and (($kv.Key -match ':') -eq ($Family -eq 'IPv6')))) { $null = $State.Learned.TryRemove($kv.Key, [ref]$dummy) }
+    }
+    if (-not @($State.Learned.Values | Where-Object Stale)) { $State.StaleExpires = $null }
+}
+
 function Get-NetUInt {
     param([byte[]]$Bytes, [int]$Offset, [int]$Count)
     $v = [long]0

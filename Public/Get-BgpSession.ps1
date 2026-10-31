@@ -4,6 +4,8 @@ function Get-BgpSession {
     $reg = Get-PowerBgpRegistry
     foreach ($S in @($reg.Bgp.Values)) {
         if ($S.Name -notlike $Name) { continue }
+        Remove-BgpStaleRoute $S
+        $peerGr = Get-BgpPeerGracefulRestart $S.PeerOpen
         $est = $S.Established
         $up = if ($est -is [datetime]) { (Get-Date) - $est } else { $null }
         [pscustomobject]@{
@@ -28,6 +30,11 @@ function Get-BgpSession {
             Advertised       = $S.Advertised.Count
             KeepalivesPaused = [bool]$S.SuppressKeepalives
             AutoReconnect    = $S.Config.AutoReconnect
+            GracefulRestart  = [bool]$S.Config.GracefulRestart
+            RestartTime      = $S.Config.RestartTime
+            PeerGracefulRestart = [bool]$peerGr
+            PeerRestartTime  = $peerGr.RestartTime
+            StaleRoutes      = @($S.Learned.Values | Where-Object Stale).Count
             Md5              = [bool]$S.Config.Password
             Reconnects       = $S.Reconnects
             NextRetry        = $S.NextRetry

@@ -91,6 +91,17 @@ Send-BgpUpdate -Name v6 -Nlri 10.10.0.0/24                 # IPv4 still works on
 
 Over an IPv4 session, `-NextHop` must be given explicitly for IPv6 prefixes. Inbound filters understand IPv6 prefixes too.
 
+### Graceful restart
+
+Add `-GracefulRestart` to advertise the Graceful Restart capability (RFC 4724) and to send an End-of-RIB marker per address family once the session is up and your routes are replayed. If the peer also advertises the capability, its routes are kept as **stale** (`Get-BgpRoute` shows `Stale`, `Get-BgpSession` shows `StaleRoutes`) when the session drops, and are removed on its End-of-RIB or when its restart time runs out. Handy for checking how a router behaves when its neighbour restarts.
+
+```powershell
+Start-BgpSession -Name gr -RemoteAddress 192.168.1.1 -RemoteAS 65000 -LocalAS 65001 -RouterId 192.168.1.50 `
+                 -GracefulRestart -RestartTime 120
+Get-BgpSession gr | Select-Object GracefulRestart, PeerGracefulRestart, PeerRestartTime, StaleRoutes
+New-BgpOpen -AS 65001 -RouterId 1.1.1.1 -GracefulRestart -RestartFlag    # crafted OPEN with the R bit set
+```
+
 ### Several sessions to one router (ECMP tests)
 
 PowerBGP does no best-path selection itself, but it can make a router see equal-cost paths. Bind each session to its own source address with `-LocalAddress`, peer with the router from each, and advertise the same prefix with the same attributes:
@@ -184,6 +195,21 @@ MD5 passwords are saved in **clear text**. Keep the file out of source control.
 
 Use `Get-Help <cmdlet> -Examples` for details.
 
+## 📚 RFCs
+
+| RFC | Topic | Used for |
+|-----|-------|----------|
+| [4271](https://www.rfc-editor.org/rfc/rfc4271) | BGP-4 | Messages, FSM, hold and keepalive timers |
+| [4760](https://www.rfc-editor.org/rfc/rfc4760) | Multiprotocol Extensions | IPv6 unicast via `MP_REACH_NLRI` / `MP_UNREACH_NLRI` |
+| [5492](https://www.rfc-editor.org/rfc/rfc5492) | Capabilities Advertisement | Capabilities in OPEN |
+| [6793](https://www.rfc-editor.org/rfc/rfc6793) | 4-octet AS numbers | 4-byte ASNs and `AS_PATH` |
+| [4724](https://www.rfc-editor.org/rfc/rfc4724) | Graceful Restart | Capability, End-of-RIB, stale routes |
+| [1997](https://www.rfc-editor.org/rfc/rfc1997) | Communities | `COMMUNITIES` attribute |
+| [2385](https://www.rfc-editor.org/rfc/rfc2385) | TCP MD5 signature | `-Password` (Linux) |
+| [5880](https://www.rfc-editor.org/rfc/rfc5880) | BFD | Control packets and session state |
+| [5881](https://www.rfc-editor.org/rfc/rfc5881) | BFD for IPv4/IPv6 single hop | UDP 3784, TTL 255 |
+| [5883](https://www.rfc-editor.org/rfc/rfc5883) | BFD multihop | `-MultiHop`, UDP 4784 |
+
 ## ⚙️ How it works
 
 Each peer runs its finite state machine (Idle, Connect, Active, OpenSent, OpenConfirm, Established) in its own runspace, so cmdlets return immediately and sessions keep running in the background. State is kept in memory and shared through one registry, so everything is lost when the PowerShell process exits.
@@ -203,6 +229,7 @@ Not yet tested against real gear: BGP toward NSX, Windows Server BGP, Cisco, IPv
 
 - IPv4 and IPv6 unicast only (no VPN, EVPN or other address families)
 - No route processing: learned routes are recorded, never installed
+- Graceful restart works as a helper for IPv4 and IPv6 unicast; there is no restarting-speaker mode that preserves forwarding state across a PowerShell restart, and the F bit is always advertised as set
 - BFD is asynchronous mode only; it answers a Poll with Final but never initiates one, and there is no authentication
 - TCP-MD5 is Linux only and IPv4 only
 - Nothing persists across restarts except what you export yourself
