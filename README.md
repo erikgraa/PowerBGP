@@ -37,7 +37,9 @@ Peer with a router, advertise a prefix and look at the result:
 
 ```powershell
 Start-BgpSession -Name lab -RemoteAddress 192.168.1.1 -RemoteAS 65000 `
-              -LocalAS 65001 -RouterId 192.168.1.50 -AutoReconnect
+              -LocalAS 65001 -RouterId 192.168.1.50
+
+# Sessions redial after a drop by default; add -AutoReconnect:$false to stay down
 
 Get-BgpSession                                    # State, Learned and Advertised counts
 

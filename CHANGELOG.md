@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.0
+
+- `Start-BgpSession` now reconnects after a drop by default. Use `-AutoReconnect:$false` to stay down. The REST API and UI follow the same default.
+- `Export-BgpConfig` always records `AutoReconnect`
+
 ## 0.5.2
 
 - BFD: `-MultiHop` (RFC 5883, UDP 4784) and `-LocalAddress` on `Start-BfdSession` and `Update-BfdSession`; `Get-BfdSession` shows `LocalAddress`
