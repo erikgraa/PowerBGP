@@ -16,6 +16,8 @@ function Update-BgpSession {
         [ValidateRange(1, 65535)][int]$Port,
         [ValidateRange(0, 255)][int]$Ttl,
         [bool]$AutoReconnect,
+        [bool]$GracefulRestart,
+        [ValidateRange(0, 4095)][int]$RestartTime,
         [string]$Password,
         [string]$LocalAddress,
         [ValidateSet('IPv4', 'IPv6')][string[]]$AddressFamily,
@@ -31,7 +33,7 @@ function Update-BgpSession {
     $wasRunning = $S.State -ne 'Stopped' -and $S.State -ne 'Idle'
     if ($wasRunning) { Stop-BgpSession -Name $Name }
 
-    foreach ($k in 'RemoteAS', 'LocalAS', 'RouterId', 'HoldTime', 'Port', 'Ttl', 'AutoReconnect', 'Password', 'LocalAddress', 'AddressFamily', 'ReconnectDelay', 'ReconnectMaxDelay') {
+    foreach ($k in 'RemoteAS', 'LocalAS', 'RouterId', 'HoldTime', 'Port', 'Ttl', 'AutoReconnect', 'GracefulRestart', 'RestartTime', 'Password', 'LocalAddress', 'AddressFamily', 'ReconnectDelay', 'ReconnectMaxDelay') {
         if ($PSBoundParameters.ContainsKey($k)) { $S.Config.$k = $PSBoundParameters[$k] }
     }
     if ($PSBoundParameters.ContainsKey('InboundFilter')) { $S.Config.InboundFilter = @(ConvertTo-BgpFilterRule $InboundFilter) }

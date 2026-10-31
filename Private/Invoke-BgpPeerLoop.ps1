@@ -85,7 +85,7 @@ function Invoke-BgpPeerSession {
         $script:lastSent = $clock.Elapsed.TotalSeconds
         $lastRecv = $clock.Elapsed.TotalSeconds
         $hold = 240
-        & $send (New-BgpOpen -AS $cfg.LocalAS -RouterId $cfg.RouterId -HoldTime $cfg.HoldTime -AddressFamily $(if ($cfg.AddressFamily) { $cfg.AddressFamily } else { 'IPv4' }))
+        & $send (New-BgpOpen -AS $cfg.LocalAS -RouterId $cfg.RouterId -HoldTime $cfg.HoldTime -AddressFamily $(if ($cfg.AddressFamily) { $cfg.AddressFamily } else { 'IPv4' }) -GracefulRestart:([bool]$cfg.GracefulRestart) -RestartTime $(if ($cfg.RestartTime) { $cfg.RestartTime } else { 120 }))
         $S.State = 'OpenSent'
         $done = $false
 
@@ -126,6 +126,7 @@ function Invoke-BgpPeerSession {
                             $S.LastError = "Bad peer AS $($parsed.Asn), expected $($cfg.RemoteAS)"; $done = $true; break
                         }
                         $S.PeerOpen = $parsed
+                        if (-not (Get-BgpPeerGracefulRestart $parsed)) { $S.StaleExpires = [datetime]::MinValue; Remove-BgpStaleRoute $S }
                         $S.PeerFourOctet = [bool]($parsed.Capabilities | Where-Object Code -EQ 65)
                         $hold = [Math]::Min($cfg.HoldTime, $parsed.HoldTime)
                         $S.HoldTime = $hold
@@ -137,6 +138,7 @@ function Invoke-BgpPeerSession {
                         $u = ConvertFrom-BgpMessage $msg -TwoOctetAs:(-not $S.PeerFourOctet)
                         $dummy = $null
                         foreach ($p in $u.Withdrawn) { $null = $S.Learned.TryRemove($p, [ref]$dummy) }
+                        if ($u.EndOfRib) { Remove-BgpStaleRoute $S -Family $u.EndOfRib }
                         $rules = $S.Config.InboundFilter; $defaultAction = $S.Config.InboundDefault
                         foreach ($p in $u.Nlri) {
                             if (($rules -or $defaultAction -eq 'Deny') -and -not (Test-BgpInboundFilter -Rules $rules -Default $defaultAction -Prefix $p -Update $u)) {
@@ -146,7 +148,7 @@ function Invoke-BgpPeerSession {
                             }
                             $S.Learned[$p] = [pscustomobject]@{
                                 Peer = $S.Name; Prefix = $p; NextHop = "$($u.NextHop)"; AsPath = ($u.AsPath -join ' ')
-                                Origin = $u.Origin; Med = $u.Med; LocalPref = $u.LocalPref; Community = ($u.Community -join ' '); Received = Get-Date
+                                Origin = $u.Origin; Med = $u.Med; LocalPref = $u.LocalPref; Community = ($u.Community -join ' '); Received = Get-Date; Stale = $false
                             }
                         }
                     }
@@ -161,12 +163,18 @@ function Invoke-BgpPeerSession {
                                 $q.Nlri = @($e.Prefix); $q.Remove('Withdrawn')
                                 $S.Outbound.Enqueue([byte[]](New-BgpUpdate @q))
                             }
+                            if ($cfg.GracefulRestart) {
+                                foreach ($af in @($(if ($cfg.AddressFamily) { $cfg.AddressFamily } else { 'IPv4' }))) {
+                                    $S.Outbound.Enqueue([byte[]](New-BgpUpdate -EndOfRib -AddressFamily $af))
+                                }
+                            }
                         }
                     }
                 }
             }
             if ($done) { break }
 
+            Remove-BgpStaleRoute $S
             $now = $clock.Elapsed.TotalSeconds
             if ($hold -gt 0 -and ($now - $lastRecv) -gt $hold) {
                 & $send (New-BgpNotification -Code 4 -Subcode 0)
@@ -186,7 +194,13 @@ function Invoke-BgpPeerSession {
         if ($client) { $client.Dispose() }
         $S.State = 'Idle'
         $S.Established = $null
-        $S.Learned.Clear()
+        $peerGr = Get-BgpPeerGracefulRestart $S.PeerOpen
+        if ($cfg.GracefulRestart -and $peerGr -and $peerGr.RestartTime -gt 0 -and -not $S.Stop -and $S.Learned.Count) {
+            # RFC 4724 receiving speaker: keep routes as stale until the peer returns (End-of-RIB) or Restart Time passes
+            foreach ($v in @($S.Learned.Values)) { $v.Stale = $true }
+            $S.StaleExpires = (Get-Date).AddSeconds($peerGr.RestartTime)
+        }
+        else { $S.Learned.Clear() }
         $dropped = $null
         while ($S.Outbound.TryDequeue([ref]$dropped)) { }
     }

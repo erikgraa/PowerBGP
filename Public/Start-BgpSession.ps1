@@ -21,6 +21,8 @@ function Start-BgpSession {
         [switch]$Passive,
         [ValidateRange(1, 255)][int]$Ttl,
         [switch]$AutoReconnect = $true,
+        [switch]$GracefulRestart,
+        [ValidateRange(0, 4095)][int]$RestartTime = 120,
         [string]$Password,
         [ValidateRange(1, 3600)][int]$ReconnectDelay = 5,
         [ValidateRange(1, 3600)][int]$ReconnectMaxDelay = 60,
@@ -48,6 +50,7 @@ function Start-BgpSession {
             Config             = [pscustomobject]@{
                 RemoteAddress = $RemoteAddress; RemoteAS = $RemoteAS; LocalAddress = $(if ($LocalAddress) { "$LocalAddress" }); LocalAS = $LocalAS; RouterId = $RouterId
                 HoldTime = $HoldTime; Port = $Port; Passive = [bool]$Passive; Ttl = $Ttl
+                GracefulRestart = [bool]$GracefulRestart; RestartTime = $RestartTime
                 AutoReconnect = [bool]$AutoReconnect; ReconnectDelay = $ReconnectDelay; ReconnectMaxDelay = $ReconnectMaxDelay
                 Password = $Password; AddressFamily = @($AddressFamily | Select-Object -Unique); InboundFilter = $rules; InboundDefault = $InboundDefault
             }
@@ -65,6 +68,7 @@ function Start-BgpSession {
             Sent               = 0
             Received           = 0
             Established        = $null
+            StaleExpires       = $null
             PeerOpen           = $null
             PeerFourOctet      = $true
             HoldTime           = 0

@@ -2,6 +2,7 @@ function New-BgpUpdate {
     <#
     .SYNOPSIS
         Builds a BGP UPDATE (4-octet AS_PATH) advertising and/or withdrawing IPv4 and IPv6 prefixes.
+        -EndOfRib builds the End-of-RIB marker for -AddressFamily (RFC 4724).
     .DESCRIPTION
         IPv4 prefixes use the classic NLRI/Withdrawn fields. IPv6 prefixes are carried in MP_REACH_NLRI / MP_UNREACH_NLRI
         (RFC 4760). One UPDATE advertises a single family: with IPv6 -Nlri, -NextHop must be an IPv6 address.
@@ -19,7 +20,9 @@ function New-BgpUpdate {
         [ValidateSet('IGP', 'EGP', 'Incomplete')][string]$Origin = 'IGP',
         [uint32]$LocalPref,
         [uint32]$Med,
-        [string[]]$Community = @()
+        [string[]]$Community = @(),
+        [switch]$EndOfRib,
+        [ValidateSet('IPv4', 'IPv6')][string]$AddressFamily = 'IPv4'
     )
 
     function ConvertTo-PrefixBytes([string]$Cidr) {
@@ -111,6 +114,12 @@ function New-BgpUpdate {
             foreach ($p in $nlri6) { $mp.AddRange([byte[]](ConvertTo-PrefixBytes $p)) }
             $attrs.AddRange([byte[]](New-PathAttribute 0x80 14 $mp.ToArray()))
         }
+    }
+    if ($EndOfRib -and $AddressFamily -eq 'IPv6') {
+        # RFC 4724 End-of-RIB for IPv6: an MP_UNREACH_NLRI with no prefixes (IPv4 is just an empty UPDATE)
+        $attrs.AddRange([byte[]](New-PathAttribute 0x80 15 ([byte[]](New-Packet -Field @(
+                            New-PacketField Afi 2 -Bytes 2
+                            New-PacketField Safi 1 -Bytes 1)))))
     }
     if ($wd6.Count) {
         $mp = [System.Collections.Generic.List[byte]]::new()

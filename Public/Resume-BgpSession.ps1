@@ -13,7 +13,8 @@ function Resume-BgpSession {
             Name = $Name; LocalAS = $c.LocalAS; RouterId = $c.RouterId; HoldTime = $c.HoldTime; Port = $c.Port
             ReconnectDelay = $c.ReconnectDelay; ReconnectMaxDelay = $c.ReconnectMaxDelay
             Passive = $c.Passive; AutoReconnect = $c.AutoReconnect
-        }
+                        GracefulRestart = [bool]$c.GracefulRestart; RestartTime = $(if ($c.RestartTime) { $c.RestartTime } else { 120 })
+                    }
         if ($c.RemoteAddress) { $p.RemoteAddress = $c.RemoteAddress }
         if ($c.RemoteAS) { $p.RemoteAS = $c.RemoteAS }
         if ($c.Ttl) { $p.Ttl = $c.Ttl }
