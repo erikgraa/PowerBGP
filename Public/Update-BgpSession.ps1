@@ -1,4 +1,4 @@
-function Update-BgpPeer {
+function Update-BgpSession {
     <#
     .SYNOPSIS
         Changes the stored configuration of a peer. A running peer is restarted (session resets); advertised routes are kept and re-sent.
@@ -18,7 +18,9 @@ function Update-BgpPeer {
         [bool]$AutoReconnect,
         [string]$Password,
         [ValidateRange(1, 3600)][int]$ReconnectDelay,
-        [ValidateRange(1, 3600)][int]$ReconnectMaxDelay
+        [ValidateRange(1, 3600)][int]$ReconnectMaxDelay,
+        [object[]]$InboundFilter,
+        [ValidateSet('Permit', 'Deny')][string]$InboundDefault
     )
     $S = (Get-PowerBgpRegistry).Bgp[$Name]
     if (-not $S) { throw "No such peer '$Name'." }
@@ -26,10 +28,12 @@ function Update-BgpPeer {
         throw '-Password (TCP-MD5) is only supported when PowerShell runs on Linux.'
     }
     $wasRunning = $S.State -ne 'Stopped' -and $S.State -ne 'Idle'
-    if ($wasRunning) { Stop-BgpPeer -Name $Name }
+    if ($wasRunning) { Stop-BgpSession -Name $Name }
 
     foreach ($k in 'RemoteAS', 'LocalAS', 'RouterId', 'HoldTime', 'Port', 'Ttl', 'AutoReconnect', 'Password', 'ReconnectDelay', 'ReconnectMaxDelay') {
         if ($PSBoundParameters.ContainsKey($k)) { $S.Config.$k = $PSBoundParameters[$k] }
     }
-    if ($wasRunning) { Resume-BgpPeer -Name $Name } else { Get-BgpPeer -Name $Name }
+    if ($PSBoundParameters.ContainsKey('InboundFilter')) { $S.Config.InboundFilter = @(ConvertTo-BgpFilterRule $InboundFilter) }
+    if ($PSBoundParameters.ContainsKey('InboundDefault')) { $S.Config.InboundDefault = $InboundDefault }
+    if ($wasRunning) { Resume-BgpSession -Name $Name } else { Get-BgpSession -Name $Name }
 }

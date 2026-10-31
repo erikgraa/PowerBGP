@@ -1,4 +1,4 @@
-function Resume-BgpPeer {
+function Resume-BgpSession {
     <#
     .SYNOPSIS
         Restarts a stopped peer with its original configuration. Routes advertised earlier are re-sent once Established.
@@ -18,11 +18,13 @@ function Resume-BgpPeer {
         if ($c.RemoteAS) { $p.RemoteAS = $c.RemoteAS }
         if ($c.Ttl) { $p.Ttl = $c.Ttl }
         if ($c.Password) { $p.Password = $c.Password }
+        if ($c.InboundFilter) { $p.InboundFilter = $c.InboundFilter }
+        $p.InboundDefault = $c.InboundDefault
         $kept = @($old.Advertised.Values)
 
-        $null = Start-BgpPeer @p
+        $null = Start-BgpSession @p
         $new = (Get-PowerBgpRegistry).Bgp[$Name]
         foreach ($e in $kept) { $new.Advertised[$e.Prefix] = $e }
-        Get-BgpPeer -Name $Name
+        Get-BgpSession -Name $Name
     }
 }

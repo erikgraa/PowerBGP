@@ -18,7 +18,7 @@ function ConvertFrom-BgpMessage {
             PSTypeName  = 'PowerBGP.Message'
             Type        = $typeName
             Length      = [int](Get-NetUInt $Message 16 2)
-            MarkerValid = -not ($Message[0..15] | Where-Object { $_ -ne 0xFF })
+            MarkerValid = (@($Message[0..15] | Where-Object { $_ -ne 0xFF }).Count -eq 0)
             Summary     = ''
         }
 

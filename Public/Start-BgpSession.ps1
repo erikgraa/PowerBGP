@@ -1,9 +1,9 @@
-function Start-BgpPeer {
+function Start-BgpSession {
     <#
     .SYNOPSIS
         Starts a BGP peer in a background runspace (active: connects out; -Passive: listens).
     .EXAMPLE
-        Start-BgpPeer -Name nsx-t0 -RemoteAddress 192.168.1.1 -RemoteAS 65000 -LocalAS 65001 -RouterId 10.0.0.99
+        Start-BgpSession -Name nsx-t0 -RemoteAddress 192.168.1.1 -RemoteAS 65000 -LocalAS 65001 -RouterId 10.0.0.99
     #>
     [CmdletBinding()]
     param(
@@ -19,8 +19,11 @@ function Start-BgpPeer {
         [switch]$AutoReconnect,
         [string]$Password,
         [ValidateRange(1, 3600)][int]$ReconnectDelay = 5,
-        [ValidateRange(1, 3600)][int]$ReconnectMaxDelay = 60
+        [ValidateRange(1, 3600)][int]$ReconnectMaxDelay = 60,
+        [object[]]$InboundFilter = @(),
+        [ValidateSet('Permit', 'Deny')][string]$InboundDefault = 'Permit'
     )
+    $rules = @(ConvertTo-BgpFilterRule $InboundFilter)
     if (-not $Passive -and -not $RemoteAddress) { throw '-RemoteAddress is required unless -Passive.' }
     if ($Password -and -not $IsLinux) { throw '-Password (TCP-MD5) is only supported when PowerShell runs on Linux (the Windows TCP stack has no TCP_MD5SIG).' }
     if (-not $Name) { $Name = if ($RemoteAddress) { $RemoteAddress } else { "passive-$Port" } }
@@ -42,8 +45,9 @@ function Start-BgpPeer {
                 RemoteAddress = $RemoteAddress; RemoteAS = $RemoteAS; LocalAS = $LocalAS; RouterId = $RouterId
                 HoldTime = $HoldTime; Port = $Port; Passive = [bool]$Passive; Ttl = $Ttl
                 AutoReconnect = [bool]$AutoReconnect; ReconnectDelay = $ReconnectDelay; ReconnectMaxDelay = $ReconnectMaxDelay
-                Password = $Password
+                Password = $Password; InboundFilter = $rules; InboundDefault = $InboundDefault
             }
+            Filtered           = 0
             Reconnects         = 0
             NextRetry          = $null
             LastEstablished    = $false
@@ -68,5 +72,5 @@ function Start-BgpPeer {
         })
     $reg.Bgp[$Name] = $S
     Start-PowerBgpRunspace -State $S -Entry 'Invoke-BgpPeerLoop'
-    Get-BgpPeer -Name $Name
+    Get-BgpSession -Name $Name
 }

@@ -1,8 +1,8 @@
-function Stop-BgpPeer {
+function Stop-BgpSession {
     <#
     .SYNOPSIS
         Sends a Cease NOTIFICATION and closes the session. The peer stays configured (State 'Stopped')
-        so Resume-BgpPeer can bring it back; use Remove-BgpPeer to delete it.
+        so Resume-BgpSession can bring it back; use Remove-BgpSession to delete it.
     #>
     [CmdletBinding()]
     param([Parameter(Mandatory, ValueFromPipelineByPropertyName)][string]$Name)

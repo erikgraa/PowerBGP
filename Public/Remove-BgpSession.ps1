@@ -1,4 +1,4 @@
-function Remove-BgpPeer {
+function Remove-BgpSession {
     <#
     .SYNOPSIS
         Stops a peer (Cease NOTIFICATION) and deletes its configuration.

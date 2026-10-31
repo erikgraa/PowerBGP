@@ -1,4 +1,4 @@
-function Get-BgpPeer {
+function Get-BgpSession {
     [CmdletBinding()]
     param([string]$Name = '*')
     $reg = Get-PowerBgpRegistry
@@ -21,6 +21,7 @@ function Get-BgpPeer {
             Sent             = $S.Sent
             Received         = $S.Received
             Learned          = $S.Learned.Count
+            Filtered         = $S.Filtered
             Advertised       = $S.Advertised.Count
             KeepalivesPaused = [bool]$S.SuppressKeepalives
             AutoReconnect    = $S.Config.AutoReconnect
