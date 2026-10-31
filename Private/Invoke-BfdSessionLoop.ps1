@@ -22,6 +22,9 @@ function Invoke-BfdSessionLoop {
         $lastRx = 0.0
         $replyFinal = $false
         $nextTx = 0.0
+        $lastSeq = $null; $txSeq = [uint32]$rand.Next(1, 1000000)
+        $authArgs = @{}
+        $S.AuthFailures = 0
         $S.State = 'Down'
         $S.LocalDiscriminator = $myDisc
 
@@ -43,6 +46,17 @@ function Invoke-BfdSessionLoop {
                 $ep = [Net.IPEndPoint]::new([ipaddress]::Any, 0)
                 $data = $rx.Receive([ref]$ep)
                 if (-not $ep.Address.Equals($remote.Address) -or $data.Length -lt 24) { continue }
+                $isAuth = $c.AuthType -and $c.AuthType -ne 'None'
+                if ($isAuth) {
+                    if (-not (Test-BfdAuth -Packet $data -Type $c.AuthType -KeyId $c.AuthKeyId -Key $c.AuthKey)) { $S.AuthFailures++; continue }
+                    if ($c.AuthType -eq 'KeyedSHA1') {
+                        # sequence must not go backwards by more than 3x the detect multiplier (RFC 5880 6.7.4)
+                        $seq = [uint32](Get-NetUInt $data 28 4)
+                        if ($null -ne $lastSeq -and $fsm.State -ne 'Down' -and (([uint32]($seq - $lastSeq)) -gt (3 * [Math]::Max(1, $remoteMult)) -and ([uint32]($lastSeq - $seq)) -lt 2147483648)) { $S.AuthFailures++; continue }
+                        $lastSeq = $seq
+                    }
+                }
+                elseif ($data[1] -band 0x04) { $S.AuthFailures++; continue }
                 $p = ConvertFrom-BfdControl $data
                 if ($p.Version -ne 1 -or $p.DetectMult -eq 0 -or $p.MyDiscriminator -eq 0) { continue }
                 if ($p.YourDiscriminator -ne 0 -and $p.YourDiscriminator -ne $myDisc) { continue }
@@ -77,8 +91,10 @@ function Invoke-BfdSessionLoop {
 
             if (-not $S.Suppress -and $now -ge $nextTx) {
                 $advTx = if ($fsm.State -eq 'Up') { $c.DesiredMinTx } else { [Math]::Max($c.DesiredMinTx, 1000000) }
+                $authArgs = if ($c.AuthType -and $c.AuthType -ne 'None') { @{ AuthType = $c.AuthType; AuthKeyId = $c.AuthKeyId; AuthKey = $c.AuthKey; AuthSequence = $txSeq } } else { @{} }
+                $txSeq = [uint32](([uint64]$txSeq + 1) % 4294967296)
                 $pkt = New-BfdControl -State $fsm.State -Diagnostic $fsm.Diag -DetectMult $c.DetectMult -MyDiscriminator $myDisc `
-                    -YourDiscriminator $yourDisc -DesiredMinTx $advTx -RequiredMinRx $c.RequiredMinRx -Final:$replyFinal
+                    -YourDiscriminator $yourDisc -DesiredMinTx $advTx -RequiredMinRx $c.RequiredMinRx -Final:$replyFinal @authArgs
                 $replyFinal = $false
                 $null = $tx.Send($pkt, $pkt.Length, $remote)
                 $S.Sent++
@@ -88,7 +104,7 @@ function Invoke-BfdSessionLoop {
             Start-Sleep -Milliseconds 5
         }
 
-        $pkt = New-BfdControl -State AdminDown -Diagnostic 7 -DetectMult $c.DetectMult -MyDiscriminator $myDisc -YourDiscriminator $yourDisc
+        $pkt = New-BfdControl -State AdminDown -Diagnostic 7 -DetectMult $c.DetectMult -MyDiscriminator $myDisc -YourDiscriminator $yourDisc @authArgs
         $null = $tx.Send($pkt, $pkt.Length, $remote)
     }
     catch { $S.LastError = $_.Exception.Message }

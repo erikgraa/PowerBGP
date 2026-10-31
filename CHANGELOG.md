@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.8.0
+
+- BFD authentication (RFC 5880 section 6.7): `-AuthType SimplePassword|KeyedSHA1`, `-AuthKeyId`, `-AuthKey` on `Start-/Update-/Resume-BfdSession` and `New-/ConvertFrom-BfdControl`. `Get-BfdSession` shows `AuthType` and `AuthFailures`. Unauthenticated sessions are unchanged
+- iBGP: when the peer's AS equals `LocalAS`, `Send-BgpUpdate` sends an empty AS_PATH and a default `LOCAL_PREF` of 100 (override with `-LocalPref`). `Get-BgpSession` shows `Type` (`iBGP` or `eBGP`)
+- CI: `publish.yml` builds and pushes to the PowerShell Gallery on a `v*` tag or a manual run (dry run by default)
+- README gains a TODO section
+
+## 0.7.1 (not released separately)
+
+- iBGP: when the peer's AS equals `LocalAS`, `Send-BgpUpdate` sends an empty AS_PATH and a default `LOCAL_PREF` of 100 (override with `-LocalPref`). `Get-BgpSession` shows `Type` (`iBGP` or `eBGP`)
+- README gains a TODO section
+
 ## 0.7.0
 
 - Graceful Restart (RFC 4724): `-GracefulRestart` and `-RestartTime` on `Start-BgpSession` and `Update-BgpSession`; `New-BgpOpen -GracefulRestart -RestartTime -RestartFlag`

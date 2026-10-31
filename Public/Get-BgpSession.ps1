@@ -16,6 +16,10 @@ function Get-BgpSession {
             Remote           = if ($S.RemoteEndpoint) { $S.RemoteEndpoint } else { '{0}:{1}' -f $S.Config.RemoteAddress, $S.Config.Port }
             RemoteAddress    = if ($S.Config.RemoteAddress) { $S.Config.RemoteAddress } elseif ($S.RemoteEndpoint) { $S.RemoteEndpoint -replace '^\[(?:::ffff:)?(.+)\]:\d+$', '$1' -replace '^(\d+\.\d+\.\d+\.\d+):\d+$', '$1' } else { $null }
             LocalAS          = $S.Config.LocalAS
+            Type             = $(
+                $pa = if ($S.PeerOpen) { $S.PeerOpen.Asn } else { $S.Config.RemoteAS }
+                if ($pa) { if ([uint32]$pa -eq [uint32]$S.Config.LocalAS) { 'iBGP' } else { 'eBGP' } }
+            )
             AddressFamily    = ($S.Config.AddressFamily -join ',')
             LocalAddress     = if ($S.LocalAddress) { $S.LocalAddress } else { $S.Config.LocalAddress }
             PeerAS           = if ($S.PeerOpen) { $S.PeerOpen.Asn } else { $S.Config.RemoteAS }
