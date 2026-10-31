@@ -24,6 +24,7 @@
     PrivateData       = @{ PSData = @{
         Tags         = @('BGP', 'BFD', 'Networking', 'Packet', 'NSX', 'Testing', 'Router', 'Linux', 'Windows')
         ProjectUri   = 'https://github.com/erikgraa/PowerBGP'
+        LicenseUri   = 'https://github.com/erikgraa/PowerBGP/blob/main/LICENSE'
         IconUri      = ''
         ReleaseNotes = '0.5.0: BGP and BFD peers, route advertisement, bulk prefixes, peer and BFD editing, TCP-MD5 (Linux), config export/import, fault injection. Fixes: Format-Packet with pipeline input, ConvertFrom-BgpMessage MarkerValid.'
     } }

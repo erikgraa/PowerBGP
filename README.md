@@ -151,4 +151,4 @@ A Pode.Web dashboard and REST API are available as a separate project, [PowerBGP
 
 ## License
 
-Not yet specified.
+MIT, see [LICENSE](LICENSE).
