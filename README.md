@@ -1,35 +1,35 @@
-# PowerBGP
+# 🛰️ PowerBGP
 
 [![PowerShell Gallery](https://img.shields.io/powershellgallery/v/PowerBGP?label=PSGallery)](https://www.powershellgallery.com/packages/PowerBGP)
 
-Stand up **BGP** and **BFD** test peers straight from PowerShell, and craft any packet byte by byte.
+Stand up **BGP** and **BFD** test peers straight from PowerShell, and craft any packet byte by byte. 🧪
 
 PowerBGP speaks just enough BGP-4 (RFC 4271) and BFD (RFC 5880) to peer with a real router, so you can test against VMware Cloud Foundation (NSX) edge clusters, Windows Server BGP, MikroTik, Cisco or any other RFC-compliant BGP engine without lab gear on the other end. It is written entirely in PowerShell, with no binaries or dependencies.
 
-- Establish sessions, advertise and withdraw prefixes, and watch what the neighbour sends you
-- Run BFD alongside BGP and see how the router reacts when the session drops
-- Inject faults (stop keepalives, send malformed messages) to test how the other side copes
-- Build and parse OPEN, UPDATE, NOTIFICATION, KEEPALIVE and BFD control packets as plain `byte[]`
-- Generic packet builder (`New-Packet`) for anything else you want to hand-craft
+- 🤝 Establish sessions, advertise and withdraw prefixes, and watch what the neighbour sends you
+- ⏱️ Run BFD alongside BGP and see how the router reacts when the session drops
+- 💥 Inject faults (stop keepalives, send malformed messages) to test how the other side copes
+- 🧱 Build and parse OPEN, UPDATE, NOTIFICATION, KEEPALIVE and BFD control packets as plain `byte[]`
+- 🔧 Generic packet builder (`New-Packet`) for anything else you want to hand-craft
 
-> **Status:** 0.5, a test tool. Not a routing daemon. It does not install routes or forward traffic.
+> ℹ️ **Status:** 0.5, a test tool. Not a routing daemon. It does not install routes or forward traffic.
 
-> **Lab use only.** Do not point PowerBGP at production routers or networks. It can advertise arbitrary prefixes and send malformed messages on purpose. Saved configs (`Export-BgpConfig`) store MD5 passwords in clear text, and the companion web UI/REST API has no authentication.
+> ⚠️ **Lab use only.** Do not point PowerBGP at production routers or networks. It can advertise arbitrary prefixes and send malformed messages on purpose. Saved configs (`Export-BgpConfig`) store MD5 passwords in clear text, and the companion web UI/REST API has no authentication.
 
-## Requirements
+## 📋 Requirements
 
 - PowerShell 7.4 or later (Windows, Linux, macOS)
 - TCP-MD5 passwords (RFC 2385) need PowerShell on **Linux**; the Windows TCP stack cannot do it
 - Binding to port 179 may need elevated rights; use `-Port` for a high port while testing
 
-## Install
+## 📦 Install
 
 ```powershell
 Install-Module PowerBGP -Scope CurrentUser
 Import-Module PowerBGP
 ```
 
-## Quick start
+## 🚀 Quick start
 
 Peer with a router, advertise a prefix and look at the result:
 
@@ -167,7 +167,7 @@ Import-BgpConfig -Path peers.json
 
 MD5 passwords are saved in **clear text**. Keep the file out of source control.
 
-## Cmdlets
+## 🧰 Cmdlets
 
 | Area | Cmdlets |
 | --- | --- |
@@ -180,11 +180,11 @@ MD5 passwords are saved in **clear text**. Keep the file out of source control.
 
 Use `Get-Help <cmdlet> -Examples` for details.
 
-## How it works
+## ⚙️ How it works
 
 Each peer runs its finite state machine (Idle, Connect, Active, OpenSent, OpenConfirm, Established) in its own runspace, so cmdlets return immediately and sessions keep running in the background. State is kept in memory and shared through one registry, so everything is lost when the PowerShell process exits.
 
-## Tested against
+## ✅ Tested against
 
 | Target | What was verified |
 |--------|-------------------|
@@ -195,7 +195,7 @@ Each peer runs its finite state machine (Idle, Connect, Active, OpenSent, OpenCo
 
 Not yet tested against real gear: BGP toward NSX, Windows Server BGP, Cisco, IPv6 on a real router, and TCP-MD5 against a real peer. Reports are welcome.
 
-## Limitations
+## 🚧 Limitations
 
 - IPv4 and IPv6 unicast only (no VPN, EVPN or other address families)
 - No route processing: learned routes are recorded, never installed
@@ -203,7 +203,7 @@ Not yet tested against real gear: BGP toward NSX, Windows Server BGP, Cisco, IPv
 - TCP-MD5 is Linux only and IPv4 only
 - Nothing persists across restarts except what you export yourself
 
-## Container
+## 🐳 Container
 
 A `Containerfile` is included for running PowerBGP in a PowerShell container (tested with rootful Podman):
 
@@ -214,7 +214,7 @@ podman run -it --rm --network host powerbgp
 
 Host networking lets sessions reach your lab devices, and the container runs as root so it can bind port 179.
 
-## Tests
+## 🧪 Tests
 
 ```powershell
 Invoke-Pester ./Tests
@@ -222,10 +222,10 @@ Invoke-Pester ./Tests
 
 The session tests run two PowerBGP peers against each other over loopback, so no router is needed.
 
-## Web UI
+## 🖥️ Web UI
 
 A Pode.Web dashboard and REST API are available as a separate project, [PowerBGP.Pode](https://github.com/erikgraa/PowerBGP.Pode).
 
-## License
+## 📄 License
 
 MIT, see [LICENSE](LICENSE).
