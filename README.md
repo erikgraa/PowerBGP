@@ -184,6 +184,17 @@ Use `Get-Help <cmdlet> -Examples` for details.
 
 Each peer runs its finite state machine (Idle, Connect, Active, OpenSent, OpenConfirm, Established) in its own runspace, so cmdlets return immediately and sessions keep running in the background. State is kept in memory and shared through one registry, so everything is lost when the PowerShell process exits.
 
+## Tested against
+
+| Target | What was verified |
+|--------|-------------------|
+| MikroTik RouterOS v7 | BGP reaching Established, auto-reconnect, route advertisement, BFD Up/Up (needs `use-bfd=yes` and a `/routing/bfd/configuration` entry) |
+| VMware NSX edge (Tier-0 gateway) | BFD Up, both single-hop (same L2 segment, TTL 255) and `-MultiHop` (UDP 4784) |
+| PowerBGP against itself (loopback) | BGP, MP-BGP IPv6, inbound filters, BFD, stop/resume, and TCP-MD5 in a Linux container |
+| CI | Pester on Ubuntu and Windows with PowerShell 7.4 and 7.5 |
+
+Not yet tested against real gear: BGP toward NSX, Windows Server BGP, Cisco, IPv6 on a real router, and TCP-MD5 against a real peer. Reports are welcome.
+
 ## Limitations
 
 - IPv4 and IPv6 unicast only (no VPN, EVPN or other address families)
