@@ -34,7 +34,7 @@ Describe 'Graceful Restart session' {
 
         Stop-BgpSession -Name gr-b
         $d = (Get-Date).AddSeconds(10)
-        while ((Get-Date) -lt $d -and (Get-BgpSession gr-a).State -eq 'Established') { Start-Sleep -Milliseconds 200 }
+        while ((Get-Date) -lt $d -and (Get-BgpSession gr-a).StaleRoutes -lt 1) { Start-Sleep -Milliseconds 200 }
         (Get-BgpSession gr-a).StaleRoutes | Should -Be 1
         (Get-BgpRoute gr-a).Stale | Should -BeTrue
 
