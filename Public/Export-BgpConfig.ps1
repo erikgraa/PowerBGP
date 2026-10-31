@@ -34,7 +34,7 @@ function Import-BgpConfig {
         if ($p.AddressFamily) { $a.AddressFamily = @($p.AddressFamily) }
         if ($p.Passive) { $a.Passive = $true }
         if ($p.Ttl) { $a.Ttl = [int]$p.Ttl }
-        if ($p.AutoReconnect) { $a.AutoReconnect = $true }
+        $a.AutoReconnect = [bool]$p.AutoReconnect
         if ($p.ReconnectDelay) { $a.ReconnectDelay = [int]$p.ReconnectDelay }
         if ($p.ReconnectMaxDelay) { $a.ReconnectMaxDelay = [int]$p.ReconnectMaxDelay }
         if ($p.Password) { $a.Password = $p.Password }

@@ -2,6 +2,7 @@ function Start-BgpSession {
     <#
     .SYNOPSIS
         Starts a BGP peer in a background runspace (active: connects out; -Passive: listens).
+        The session reconnects after a drop by default; use -AutoReconnect:$false to stay down.
         -LocalAddress binds the session to a specific source IP (useful for several sessions to one router, e.g. ECMP tests).
     .EXAMPLE
         Start-BgpSession -Name nsx-t0 -RemoteAddress 192.168.1.1 -RemoteAS 65000 -LocalAS 65001 -RouterId 10.0.0.99
@@ -19,7 +20,7 @@ function Start-BgpSession {
         [ValidateRange(1, 65535)][int]$Port = 179,
         [switch]$Passive,
         [ValidateRange(1, 255)][int]$Ttl,
-        [switch]$AutoReconnect,
+        [switch]$AutoReconnect = $true,
         [string]$Password,
         [ValidateRange(1, 3600)][int]$ReconnectDelay = 5,
         [ValidateRange(1, 3600)][int]$ReconnectMaxDelay = 60,
