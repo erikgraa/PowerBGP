@@ -6,9 +6,10 @@ function Invoke-BfdSessionLoop {
     $rand = [Random]::new()
 
     try {
-        $rx = [Net.Sockets.UdpClient]::new($c.ListenPort)
+        $bindIp = if ($c.LocalAddress) { [ipaddress]$c.LocalAddress } else { [ipaddress]::Any }
+        $rx = [Net.Sockets.UdpClient]::new([Net.IPEndPoint]::new($bindIp, $c.ListenPort))
         for ($i = 0; $i -lt 20 -and -not $tx; $i++) {
-            try { $tx = [Net.Sockets.UdpClient]::new([Net.IPEndPoint]::new([ipaddress]::Any, $rand.Next(49152, 65535))) } catch { }
+            try { $tx = [Net.Sockets.UdpClient]::new([Net.IPEndPoint]::new($bindIp, $rand.Next(49152, 65535))) } catch { }
         }
         if (-not $tx) { throw 'Could not bind a source port in 49152-65535.' }
         $tx.Client.Ttl = 255
@@ -19,6 +20,7 @@ function Invoke-BfdSessionLoop {
         $fsm = @{ State = 'Down'; Diag = 0 }
         $remoteMult = 0; $remoteDesiredTx = 1000000; $remoteRequiredRx = 1000000
         $lastRx = 0.0
+        $replyFinal = $false
         $nextTx = 0.0
         $S.State = 'Down'
         $S.LocalDiscriminator = $myDisc
@@ -65,7 +67,7 @@ function Invoke-BfdSessionLoop {
                         if ($p.State -in 'Down', 'AdminDown') { & $setState 'Down' 3 }
                     }
                 }
-                if ($p.Poll) { $nextTx = 0 }
+                if ($p.Poll) { $nextTx = 0; $replyFinal = $true }
             }
 
             if ($fsm.State -in 'Init', 'Up' -and $remoteMult -gt 0) {
@@ -76,7 +78,8 @@ function Invoke-BfdSessionLoop {
             if (-not $S.Suppress -and $now -ge $nextTx) {
                 $advTx = if ($fsm.State -eq 'Up') { $c.DesiredMinTx } else { [Math]::Max($c.DesiredMinTx, 1000000) }
                 $pkt = New-BfdControl -State $fsm.State -Diagnostic $fsm.Diag -DetectMult $c.DetectMult -MyDiscriminator $myDisc `
-                    -YourDiscriminator $yourDisc -DesiredMinTx $advTx -RequiredMinRx $c.RequiredMinRx
+                    -YourDiscriminator $yourDisc -DesiredMinTx $advTx -RequiredMinRx $c.RequiredMinRx -Final:$replyFinal
+                $replyFinal = $false
                 $null = $tx.Send($pkt, $pkt.Length, $remote)
                 $S.Sent++
                 $intervalUs = if ($fsm.State -eq 'Up') { [Math]::Max($c.DesiredMinTx, $remoteRequiredRx) } else { [Math]::Max($c.DesiredMinTx, 1000000) }

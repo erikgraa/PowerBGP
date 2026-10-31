@@ -121,6 +121,12 @@ Set-BfdSession lab-bfd -Suppress $true   # go silent and watch the router tear d
 
 Many routers (for example MikroTik) only run BFD toward you while the BGP session is up and BFD is enabled for that peer.
 
+Single-hop BFD (RFC 5881, UDP 3784) requires the packet to arrive with TTL 255, so the peer must be on the same L2 segment. For a routed path use `-MultiHop` (RFC 5883, UDP 4784), and pin the source address with `-LocalAddress` when the host has several IPs:
+
+```powershell
+Start-BfdSession -Name nsx-bfd -RemoteAddress 10.0.0.2 -LocalAddress 10.0.0.9 -MultiHop
+```
+
 ### Fault injection and crafted messages
 
 ```powershell
@@ -182,7 +188,7 @@ Each peer runs its finite state machine (Idle, Connect, Active, OpenSent, OpenCo
 
 - IPv4 and IPv6 unicast only (no VPN, EVPN or other address families)
 - No route processing: learned routes are recorded, never installed
-- BFD is single-hop asynchronous mode only, with no Poll/Final sequence and no authentication
+- BFD is asynchronous mode only; it answers a Poll with Final but never initiates one, and there is no authentication
 - TCP-MD5 is Linux only and IPv4 only
 - Nothing persists across restarts except what you export yourself
 

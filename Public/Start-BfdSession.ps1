@@ -1,22 +1,32 @@
 function Start-BfdSession {
     <#
     .SYNOPSIS
-        Starts a single-hop BFD session (UDP, TTL 255, source port 49152-65535).
+        Starts a BFD session (UDP, TTL 255, source port 49152-65535). Single-hop (RFC 5881, port 3784) by default.
+    .PARAMETER MultiHop
+        Multihop BFD (RFC 5883): defaults -Port and -ListenPort to 4784 instead of 3784. Use it when the peer is
+        not on the same L2 segment (single-hop peers drop packets whose TTL is below 255) and supports multihop BFD.
+    .PARAMETER LocalAddress
+        Bind to this local IPv4 address, so packets leave from the address the peer expects.
     .PARAMETER ListenPort
-        Local UDP port to receive on (3784 normally).
+        Local UDP port to receive on (3784 normally, 4784 with -MultiHop).
     .PARAMETER Port
-        Remote UDP port to send to (3784 normally).
+        Remote UDP port to send to (3784 normally, 4784 with -MultiHop).
     #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$RemoteAddress,
         [string]$Name,
-        [int]$Port = 3784,
-        [int]$ListenPort = 3784,
+        [int]$Port,
+        [int]$ListenPort,
+        [switch]$MultiHop,
+        [ipaddress]$LocalAddress,
         [uint32]$DesiredMinTxMs = 500,
         [uint32]$RequiredMinRxMs = 500,
         [ValidateRange(1, 255)][int]$DetectMult = 3
     )
+    $default = if ($MultiHop) { 4784 } else { 3784 }
+    if (-not $PSBoundParameters.ContainsKey('Port')) { $Port = $default }
+    if (-not $PSBoundParameters.ContainsKey('ListenPort')) { $ListenPort = $default }
     if (-not $Name) { $Name = $RemoteAddress }
     $reg = Get-PowerBgpRegistry
     $existing = $reg.Bfd[$Name]
@@ -26,6 +36,7 @@ function Start-BfdSession {
             Name               = $Name
             Config             = [pscustomobject]@{
                 RemoteAddress = $RemoteAddress; RemotePort = $Port; ListenPort = $ListenPort
+                LocalAddress = if ($LocalAddress) { $LocalAddress.ToString() } else { $null }
                 DesiredMinTx = $DesiredMinTxMs * 1000; RequiredMinRx = $RequiredMinRxMs * 1000; DetectMult = $DetectMult
             }
             State              = 'Down'
@@ -56,6 +67,7 @@ function Get-BfdSession {
             State         = $S.State
             RemoteState   = $S.RemoteState
             Remote        = '{0}:{1}' -f $S.Config.RemoteAddress, $S.Config.RemotePort
+            LocalAddress  = $S.Config.LocalAddress
             TxMs          = $S.Config.DesiredMinTx / 1000
             RxMs          = $S.Config.RequiredMinRx / 1000
             DetectMult    = $S.Config.DetectMult
@@ -91,7 +103,8 @@ function Resume-BfdSession {
         $old = (Get-PowerBgpRegistry).Bfd[$Name]
         if (-not $old) { Write-Error "No such BFD session '$Name'."; return }
         $c = $old.Config
-        $null = Start-BfdSession -Name $Name -RemoteAddress $c.RemoteAddress -Port $c.RemotePort -ListenPort $c.ListenPort `
+        $la = if ($c.LocalAddress) { @{ LocalAddress = [ipaddress]$c.LocalAddress } } else { @{} }
+        $null = Start-BfdSession -Name $Name -RemoteAddress $c.RemoteAddress -Port $c.RemotePort -ListenPort $c.ListenPort @la `
             -DesiredMinTxMs ($c.DesiredMinTx / 1000) -RequiredMinRxMs ($c.RequiredMinRx / 1000) -DetectMult $c.DetectMult
         Get-BfdSession -Name $Name
     }
@@ -107,6 +120,7 @@ function Update-BfdSession {
         [Parameter(Mandatory)][string]$Name,
         [int]$Port,
         [int]$ListenPort,
+        [ipaddress]$LocalAddress,
         [uint32]$DesiredMinTxMs,
         [uint32]$RequiredMinRxMs,
         [ValidateRange(1, 255)][int]$DetectMult
@@ -118,6 +132,7 @@ function Update-BfdSession {
     $c = $S.Config
     if ($PSBoundParameters.ContainsKey('Port')) { $c.RemotePort = $Port }
     if ($PSBoundParameters.ContainsKey('ListenPort')) { $c.ListenPort = $ListenPort }
+    if ($PSBoundParameters.ContainsKey('LocalAddress')) { $c.LocalAddress = $LocalAddress.ToString() }
     if ($PSBoundParameters.ContainsKey('DesiredMinTxMs')) { $c.DesiredMinTx = $DesiredMinTxMs * 1000 }
     if ($PSBoundParameters.ContainsKey('RequiredMinRxMs')) { $c.RequiredMinRx = $RequiredMinRxMs * 1000 }
     if ($PSBoundParameters.ContainsKey('DetectMult')) { $c.DetectMult = $DetectMult }
