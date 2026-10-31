@@ -1,9 +1,14 @@
 function New-BgpUpdate {
     <#
     .SYNOPSIS
-        Builds a BGP UPDATE (4-octet AS_PATH) advertising and/or withdrawing IPv4 prefixes.
+        Builds a BGP UPDATE (4-octet AS_PATH) advertising and/or withdrawing IPv4 and IPv6 prefixes.
+    .DESCRIPTION
+        IPv4 prefixes use the classic NLRI/Withdrawn fields. IPv6 prefixes are carried in MP_REACH_NLRI / MP_UNREACH_NLRI
+        (RFC 4760). One UPDATE advertises a single family: with IPv6 -Nlri, -NextHop must be an IPv6 address.
     .EXAMPLE
         New-BgpUpdate -Nlri 10.10.0.0/24,10.10.1.0/24 -NextHop 192.168.1.99 -AsPath 65001
+    .EXAMPLE
+        New-BgpUpdate -Nlri 2001:db8:10::/48 -NextHop 2001:db8:ffff::99 -AsPath 65001
     #>
     [CmdletBinding()]
     param(
@@ -20,8 +25,10 @@ function New-BgpUpdate {
     function ConvertTo-PrefixBytes([string]$Cidr) {
         $ip, $len = $Cidr -split '/'
         $len = [int]$len
-        if ($len -lt 0 -or $len -gt 32) { throw "Invalid prefix length in '$Cidr'." }
-        $addr = ([ipaddress]$ip).GetAddressBytes()
+        $a = [ipaddress]$ip
+        $max = if ($a.AddressFamily -eq 'InterNetworkV6') { 128 } else { 32 }
+        if ($len -lt 0 -or $len -gt $max) { throw "Invalid prefix length in '$Cidr'." }
+        $addr = $a.GetAddressBytes()
         $n = [int][Math]::Ceiling($len / 8)
         $out = [byte[]]::new(1 + $n)
         $out[0] = [byte]$len
@@ -31,13 +38,30 @@ function New-BgpUpdate {
     }
 
     function New-PathAttribute([byte]$Flags, [byte]$Code, [byte[]]$Value) {
-        New-Packet -Field @(
-            New-PacketField Flags $Flags -Bytes 1
-            New-PacketField Code  $Code -Bytes 1
-            New-PacketField Len   $Value.Length -Bytes 1
-            New-PacketField Value $Value
-        )
+        if ($Value.Length -gt 255) {
+            New-Packet -Field @(
+                New-PacketField Flags ($Flags -bor 0x10) -Bytes 1
+                New-PacketField Code  $Code -Bytes 1
+                New-PacketField Len   $Value.Length -Bytes 2
+                New-PacketField Value $Value
+            )
+        }
+        else {
+            New-Packet -Field @(
+                New-PacketField Flags $Flags -Bytes 1
+                New-PacketField Code  $Code -Bytes 1
+                New-PacketField Len   $Value.Length -Bytes 1
+                New-PacketField Value $Value
+            )
+        }
     }
+
+    $isV6 = { param($p) $p -match ':' }
+    $nlri4 = @($Nlri | Where-Object { -not (& $isV6 $_) })
+    $nlri6 = @($Nlri | Where-Object { & $isV6 $_ })
+    $wd4 = @($Withdrawn | Where-Object { -not (& $isV6 $_) })
+    $wd6 = @($Withdrawn | Where-Object { & $isV6 $_ })
+    if ($nlri4.Count -and $nlri6.Count) { throw 'Advertise IPv4 and IPv6 prefixes in separate UPDATEs.' }
 
     $attrs = [System.Collections.Generic.List[byte]]::new()
 
@@ -57,7 +81,10 @@ function New-BgpUpdate {
         $attrs.AddRange([byte[]](New-PathAttribute 0x40 2 $segment))
 
         if (-not $NextHop) { throw '-NextHop is required when advertising -Nlri.' }
-        $attrs.AddRange([byte[]](New-PathAttribute 0x40 3 $NextHop.GetAddressBytes()))
+        if ($nlri4.Count) {
+            if ($NextHop.AddressFamily -ne 'InterNetwork') { throw 'An IPv4 -Nlri needs an IPv4 -NextHop.' }
+            $attrs.AddRange([byte[]](New-PathAttribute 0x40 3 $NextHop.GetAddressBytes()))
+        }
 
         if ($PSBoundParameters.ContainsKey('Med')) {
             $attrs.AddRange([byte[]](New-PathAttribute 0x80 4 (New-Packet -Field (New-PacketField V $Med -Bytes 4))))
@@ -72,12 +99,32 @@ function New-BgpUpdate {
             }
             $attrs.AddRange([byte[]](New-PathAttribute 0xC0 8 (New-Packet -Field $cf)))
         }
+        if ($nlri6.Count) {
+            if ($NextHop.AddressFamily -ne 'InterNetworkV6') { throw 'An IPv6 -Nlri needs an IPv6 -NextHop.' }
+            $mp = [System.Collections.Generic.List[byte]]::new()
+            $mp.AddRange([byte[]](New-Packet -Field @(
+                        New-PacketField Afi 2 -Bytes 2
+                        New-PacketField Safi 1 -Bytes 1
+                        New-PacketField NhLen 16 -Bytes 1
+                        New-PacketField Nh $NextHop.GetAddressBytes()
+                        New-PacketField Reserved 0 -Bytes 1)))
+            foreach ($p in $nlri6) { $mp.AddRange([byte[]](ConvertTo-PrefixBytes $p)) }
+            $attrs.AddRange([byte[]](New-PathAttribute 0x80 14 $mp.ToArray()))
+        }
+    }
+    if ($wd6.Count) {
+        $mp = [System.Collections.Generic.List[byte]]::new()
+        $mp.AddRange([byte[]](New-Packet -Field @(
+                    New-PacketField Afi 2 -Bytes 2
+                    New-PacketField Safi 1 -Bytes 1)))
+        foreach ($p in $wd6) { $mp.AddRange([byte[]](ConvertTo-PrefixBytes $p)) }
+        $attrs.AddRange([byte[]](New-PathAttribute 0x80 15 $mp.ToArray()))
     }
 
     $wd = [System.Collections.Generic.List[byte]]::new()
-    foreach ($p in $Withdrawn) { $wd.AddRange([byte[]](ConvertTo-PrefixBytes $p)) }
+    foreach ($p in $wd4) { $wd.AddRange([byte[]](ConvertTo-PrefixBytes $p)) }
     $nl = [System.Collections.Generic.List[byte]]::new()
-    foreach ($p in $Nlri) { $nl.AddRange([byte[]](ConvertTo-PrefixBytes $p)) }
+    foreach ($p in $nlri4) { $nl.AddRange([byte[]](ConvertTo-PrefixBytes $p)) }
 
     $body = New-Packet -Field @(
         New-PacketField WithdrawnLen $wd.Count -Bytes 2

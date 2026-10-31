@@ -98,11 +98,29 @@ function ConvertFrom-BgpMessage {
                             $r.Community += '{0}:{1}' -f (Get-NetUInt $a.Value $k 2), (Get-NetUInt $a.Value ($k + 2) 2)
                         }
                     }
+                    14 {
+                        if ($a.Value.Length -ge 5) {
+                            $afi = [int](Get-NetUInt $a.Value 0 2)
+                            $nhLen = [int]$a.Value[3]
+                            if ($a.Value.Length -ge (4 + $nhLen + 1)) {
+                                if (-not $r.NextHop -and $nhLen -in 4, 16, 32) { $r.NextHop = [ipaddress]::new([byte[]]$a.Value[4..(3 + [Math]::Min($nhLen, 16))]) }
+                                $mpBytes = [byte[]]$a.Value
+                                $r.Nlri += @(Read-BgpPrefix $mpBytes (5 + $nhLen) $mpBytes.Length $afi)
+                            }
+                        }
+                    }
+                    15 {
+                        if ($a.Value.Length -ge 3) {
+                            $afi = [int](Get-NetUInt $a.Value 0 2)
+                            $mpBytes = [byte[]]$a.Value
+                            $r.Withdrawn += @(Read-BgpPrefix $mpBytes 3 $mpBytes.Length $afi)
+                        }
+                    }
                 }
             }
             $parts = @()
             if ($r.Nlri.Count) { $parts += "NLRI $($r.Nlri -join ',')"; $parts += "NH $($r.NextHop)"; $parts += "AS_PATH $($r.AsPath -join ' ')" }
-            if ($withdrawn.Count) { $parts += "WD $($withdrawn -join ',')" }
+            if ($r.Withdrawn.Count) { $parts += "WD $($r.Withdrawn -join ',')" }
             if (-not $parts) { $parts = 'End-of-RIB / empty' }
             $r.Summary = $parts -join '; '
         }

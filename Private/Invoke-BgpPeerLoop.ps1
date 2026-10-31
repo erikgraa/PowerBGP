@@ -6,7 +6,8 @@ function Invoke-BgpPeerLoop {
     $delay = $cfg.ReconnectDelay
     try {
         if ($cfg.Passive) {
-            $listener = [Net.Sockets.TcpListener]::new([ipaddress]::Any, $cfg.Port)
+            $listener = [Net.Sockets.TcpListener]::new($(if ($cfg.LocalAddress) { [ipaddress]$cfg.LocalAddress } elseif ('IPv6' -in $cfg.AddressFamily -and -not $cfg.Password) { [ipaddress]::IPv6Any } else { [ipaddress]::Any }), $cfg.Port)
+            if ($listener.Server.AddressFamily -eq 'InterNetworkV6') { $listener.Server.DualMode = $true }
             if ($cfg.Password) { Set-BgpTcpMd5 -Socket $listener.Server -Address $cfg.RemoteAddress -Password $cfg.Password }
             $listener.Start()
         }
@@ -59,7 +60,9 @@ function Invoke-BgpPeerSession {
         else {
             while (-not $S.Stop -and -not $client) {
                 $S.State = 'Connect'
-                $c = if ($cfg.Password) { [Net.Sockets.TcpClient]::new([Net.Sockets.AddressFamily]::InterNetwork) } else { [Net.Sockets.TcpClient]::new() }
+                $c = if ($cfg.LocalAddress) { [Net.Sockets.TcpClient]::new([Net.IPEndPoint]::new([ipaddress]$cfg.LocalAddress, 0)) }
+                elseif ($cfg.Password) { [Net.Sockets.TcpClient]::new([Net.Sockets.AddressFamily]::InterNetwork) }
+                else { [Net.Sockets.TcpClient]::new() }
                 if ($cfg.Password) { Set-BgpTcpMd5 -Socket $c.Client -Address $cfg.RemoteAddress -Password $cfg.Password }
                 $task = $c.ConnectAsync($cfg.RemoteAddress, $cfg.Port)
                 while (-not $task.IsCompleted -and -not $S.Stop) { Start-Sleep -Milliseconds 50 }
@@ -82,7 +85,7 @@ function Invoke-BgpPeerSession {
         $script:lastSent = $clock.Elapsed.TotalSeconds
         $lastRecv = $clock.Elapsed.TotalSeconds
         $hold = 240
-        & $send (New-BgpOpen -AS $cfg.LocalAS -RouterId $cfg.RouterId -HoldTime $cfg.HoldTime)
+        & $send (New-BgpOpen -AS $cfg.LocalAS -RouterId $cfg.RouterId -HoldTime $cfg.HoldTime -AddressFamily $(if ($cfg.AddressFamily) { $cfg.AddressFamily } else { 'IPv4' }))
         $S.State = 'OpenSent'
         $done = $false
 
