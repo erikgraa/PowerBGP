@@ -1,5 +1,5 @@
 BeforeAll { Import-Module "$PSScriptRoot\..\PowerBGP.psd1" -Force }
-AfterAll { Get-BgpPeer | Remove-BgpPeer -Confirm:$false; Get-BfdSession | Remove-BfdSession }
+AfterAll { Get-BgpSession | Remove-BgpSession -Confirm:$false; Get-BfdSession | Remove-BfdSession }
 
 Describe 'Format-Packet' {
     It 'prints offset, hex and ASCII' {
@@ -107,46 +107,46 @@ Describe 'Update-BfdSession' {
 
 Describe 'Peer lifecycle guards' {
     It 'refuses to advertise on a peer that is not Established' {
-        $null = Start-BgpPeer -Name g1 -RemoteAddress 127.0.0.8 -Port 12610 -LocalAS 65001 -RouterId 1.1.1.1
+        $null = Start-BgpSession -Name g1 -RemoteAddress 127.0.0.8 -Port 12610 -LocalAS 65001 -RouterId 1.1.1.1
         { Send-BgpUpdate -Name g1 -Nlri 10.0.0.0/24 } | Should -Throw '*not Established*'
-        Remove-BgpPeer g1 -Confirm:$false
+        Remove-BgpSession g1 -Confirm:$false
     }
     It 'throws for an unknown peer' {
         { Send-BgpUpdate -Name nope -Nlri 10.0.0.0/24 } | Should -Throw '*No such peer*'
     }
     It 'removes a peer from the registry' {
-        $null = Start-BgpPeer -Name g2 -RemoteAddress 127.0.0.7 -Port 12611 -LocalAS 65001 -RouterId 1.1.1.1
-        Remove-BgpPeer g2 -Confirm:$false
-        Get-BgpPeer g2 -ErrorAction SilentlyContinue | Should -BeNullOrEmpty
+        $null = Start-BgpSession -Name g2 -RemoteAddress 127.0.0.7 -Port 12611 -LocalAS 65001 -RouterId 1.1.1.1
+        Remove-BgpSession g2 -Confirm:$false
+        Get-BgpSession g2 -ErrorAction SilentlyContinue | Should -BeNullOrEmpty
     }
 }
 
 Describe 'Config export and import' {
     It 'round-trips peer settings' {
-        Get-BgpPeer | Remove-BgpPeer -Confirm:$false
-        $null = Start-BgpPeer -Name cfg1 -Passive -RemoteAddress 127.0.0.6 -Port 12620 -LocalAS 65001 -RemoteAS 65002 -RouterId 1.1.1.1 -HoldTime 45
+        Get-BgpSession | Remove-BgpSession -Confirm:$false
+        $null = Start-BgpSession -Name cfg1 -Passive -RemoteAddress 127.0.0.6 -Port 12620 -LocalAS 65001 -RemoteAS 65002 -RouterId 1.1.1.1 -HoldTime 45
         $f = Join-Path ([IO.Path]::GetTempPath()) "powerbgp-$([guid]::NewGuid()).json"
         try {
             Export-BgpConfig -Path $f
-            Get-BgpPeer | Remove-BgpPeer -Confirm:$false
-            Get-BgpPeer | Should -BeNullOrEmpty
+            Get-BgpSession | Remove-BgpSession -Confirm:$false
+            Get-BgpSession | Should -BeNullOrEmpty
             Import-BgpConfig -Path $f
-            $p = Get-BgpPeer cfg1
+            $p = Get-BgpSession cfg1
             $p | Should -Not -BeNullOrEmpty
             $p.PeerAS | Should -Be 65002
             (InModuleScope PowerBGP { (Get-PowerBgpRegistry).Bgp['cfg1'].Config.HoldTime }) | Should -Be 45
         }
-        finally { Remove-Item $f -ErrorAction SilentlyContinue; Get-BgpPeer | Remove-BgpPeer -Confirm:$false }
+        finally { Remove-Item $f -ErrorAction SilentlyContinue; Get-BgpSession | Remove-BgpSession -Confirm:$false }
     }
 }
 
 Describe 'Get-BgpRoute directions (loopback)' {
     It 'shows what we advertise and what the neighbour learned' {
-        Get-BgpPeer | Remove-BgpPeer -Confirm:$false
-        $null = Start-BgpPeer -Name rl -Passive -Port 12630 -LocalAS 65001 -RemoteAS 65002 -RouterId 1.1.1.1
+        Get-BgpSession | Remove-BgpSession -Confirm:$false
+        $null = Start-BgpSession -Name rl -Passive -Port 12630 -LocalAS 65001 -RemoteAS 65002 -RouterId 1.1.1.1
         Start-Sleep 1
-        $null = Start-BgpPeer -Name rd -RemoteAddress 127.0.0.1 -Port 12630 -LocalAS 65002 -RemoteAS 65001 -RouterId 2.2.2.2
-        $d = (Get-Date).AddSeconds(12); while ((Get-Date) -lt $d -and (Get-BgpPeer rd).State -ne 'Established') { Start-Sleep -Milliseconds 300 }
+        $null = Start-BgpSession -Name rd -RemoteAddress 127.0.0.1 -Port 12630 -LocalAS 65002 -RemoteAS 65001 -RouterId 2.2.2.2
+        $d = (Get-Date).AddSeconds(12); while ((Get-Date) -lt $d -and (Get-BgpSession rd).State -ne 'Established') { Start-Sleep -Milliseconds 300 }
         Send-BgpUpdate -Name rd -Nlri 10.77.0.0/24 -AsPath 65002, 65100
         $d = (Get-Date).AddSeconds(8); while ((Get-Date) -lt $d -and -not (Get-BgpRoute -Name rl)) { Start-Sleep -Milliseconds 200 }
 
@@ -160,6 +160,6 @@ Describe 'Get-BgpRoute directions (loopback)' {
         $d = (Get-Date).AddSeconds(8); while ((Get-Date) -lt $d -and (Get-BgpRoute -Name rl)) { Start-Sleep -Milliseconds 200 }
         @(Get-BgpRoute -Name rl).Count | Should -Be 0
         @(Get-BgpRoute -Name rd -Direction Advertised).Count | Should -Be 0
-        Get-BgpPeer | Remove-BgpPeer -Confirm:$false
+        Get-BgpSession | Remove-BgpSession -Confirm:$false
     }
 }

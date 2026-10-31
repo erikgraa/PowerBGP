@@ -1,4 +1,4 @@
-function Set-BgpPeer {
+function Set-BgpSession {
     <#
     .SYNOPSIS
         Fault injection toggles on a running peer.

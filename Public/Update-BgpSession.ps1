@@ -1,4 +1,4 @@
-function Update-BgpPeer {
+function Update-BgpSession {
     <#
     .SYNOPSIS
         Changes the stored configuration of a peer. A running peer is restarted (session resets); advertised routes are kept and re-sent.
@@ -26,10 +26,10 @@ function Update-BgpPeer {
         throw '-Password (TCP-MD5) is only supported when PowerShell runs on Linux.'
     }
     $wasRunning = $S.State -ne 'Stopped' -and $S.State -ne 'Idle'
-    if ($wasRunning) { Stop-BgpPeer -Name $Name }
+    if ($wasRunning) { Stop-BgpSession -Name $Name }
 
     foreach ($k in 'RemoteAS', 'LocalAS', 'RouterId', 'HoldTime', 'Port', 'Ttl', 'AutoReconnect', 'Password', 'ReconnectDelay', 'ReconnectMaxDelay') {
         if ($PSBoundParameters.ContainsKey($k)) { $S.Config.$k = $PSBoundParameters[$k] }
     }
-    if ($wasRunning) { Resume-BgpPeer -Name $Name } else { Get-BgpPeer -Name $Name }
+    if ($wasRunning) { Resume-BgpSession -Name $Name } else { Get-BgpSession -Name $Name }
 }

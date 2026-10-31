@@ -36,6 +36,6 @@ function Import-BgpConfig {
         if ($p.ReconnectDelay) { $a.ReconnectDelay = [int]$p.ReconnectDelay }
         if ($p.ReconnectMaxDelay) { $a.ReconnectMaxDelay = [int]$p.ReconnectMaxDelay }
         if ($p.Password) { $a.Password = $p.Password }
-        Start-BgpPeer @a
+        Start-BgpSession @a
     }
 }

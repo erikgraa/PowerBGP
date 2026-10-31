@@ -1,4 +1,4 @@
-function Get-BgpPeer {
+function Get-BgpSession {
     [CmdletBinding()]
     param([string]$Name = '*')
     $reg = Get-PowerBgpRegistry

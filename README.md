@@ -32,10 +32,10 @@ Import-Module PowerBGP
 Peer with a router, advertise a prefix and look at the result:
 
 ```powershell
-Start-BgpPeer -Name lab -RemoteAddress 192.168.1.1 -RemoteAS 65000 `
+Start-BgpSession -Name lab -RemoteAddress 192.168.1.1 -RemoteAS 65000 `
               -LocalAS 65001 -RouterId 192.168.1.50 -AutoReconnect
 
-Get-BgpPeer                                    # State, Learned and Advertised counts
+Get-BgpSession                                    # State, Learned and Advertised counts
 
 Send-BgpUpdate -Name lab -Nlri 10.10.0.0/24 -NextHop 192.168.1.50 -AsPath 65001
 
@@ -43,15 +43,15 @@ Get-BgpRoute -Name lab -Direction Learned      # what the neighbour advertises t
 Get-BgpRoute -Name lab -Direction Advertised   # what we advertise to it
 
 Send-BgpUpdate -Name lab -Withdrawn 10.10.0.0/24
-Stop-BgpPeer lab                               # Cease; config is kept
-Resume-BgpPeer lab                             # restart, routes are re-sent
-Remove-BgpPeer lab                             # delete it
+Stop-BgpSession lab                               # Cease; config is kept
+Resume-BgpSession lab                             # restart, routes are re-sent
+Remove-BgpSession lab                             # delete it
 ```
 
 Passive mode, to have the router connect to you:
 
 ```powershell
-Start-BgpPeer -Name inbound -Passive -RemoteAddress 192.168.1.1 -RemoteAS 65000 -LocalAS 65001 -RouterId 192.168.1.50
+Start-BgpSession -Name inbound -Passive -RemoteAddress 192.168.1.1 -RemoteAS 65000 -LocalAS 65001 -RouterId 192.168.1.50
 ```
 
 ### Lots of routes
@@ -75,7 +75,7 @@ Many routers (for example MikroTik) only run BFD toward you while the BGP sessio
 ### Fault injection and crafted messages
 
 ```powershell
-Set-BgpPeer -Name lab -SuppressKeepalives $true      # let the remote hold timer expire
+Set-BgpSession -Name lab -SuppressKeepalives $true      # let the remote hold timer expire
 
 $bad = New-BgpNotification -Code 3 -Subcode 1        # UPDATE Message Error
 Send-BgpMessage -Name lab -Bytes $bad
@@ -119,7 +119,7 @@ MD5 passwords are saved in **clear text**. Keep the file out of source control.
 | Packet builder | `New-PacketField`, `New-Packet`, `Format-Packet` |
 | BGP messages | `New-BgpOpen`, `New-BgpUpdate`, `New-BgpKeepalive`, `New-BgpNotification`, `ConvertFrom-BgpMessage`, `New-BgpPrefixRange` |
 | BFD packets | `New-BfdControl`, `ConvertFrom-BfdControl` |
-| BGP sessions | `Start-BgpPeer`, `Get-BgpPeer`, `Update-BgpPeer`, `Stop-BgpPeer`, `Resume-BgpPeer`, `Remove-BgpPeer`, `Send-BgpUpdate`, `Send-BgpMessage`, `Set-BgpPeer`, `Get-BgpRoute`, `Get-BgpEvent` |
+| BGP sessions | `Start-BgpSession`, `Get-BgpSession`, `Update-BgpSession`, `Stop-BgpSession`, `Resume-BgpSession`, `Remove-BgpSession`, `Send-BgpUpdate`, `Send-BgpMessage`, `Set-BgpSession`, `Get-BgpRoute`, `Get-BgpEvent` |
 | BFD sessions | `Start-BfdSession`, `Get-BfdSession`, `Update-BfdSession`, `Stop-BfdSession`, `Resume-BfdSession`, `Remove-BfdSession`, `Set-BfdSession` |
 | Config | `Export-BgpConfig`, `Import-BgpConfig` |
 

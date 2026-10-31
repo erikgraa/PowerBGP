@@ -1,9 +1,9 @@
-function Start-BgpPeer {
+function Start-BgpSession {
     <#
     .SYNOPSIS
         Starts a BGP peer in a background runspace (active: connects out; -Passive: listens).
     .EXAMPLE
-        Start-BgpPeer -Name nsx-t0 -RemoteAddress 192.168.1.1 -RemoteAS 65000 -LocalAS 65001 -RouterId 10.0.0.99
+        Start-BgpSession -Name nsx-t0 -RemoteAddress 192.168.1.1 -RemoteAS 65000 -LocalAS 65001 -RouterId 10.0.0.99
     #>
     [CmdletBinding()]
     param(
@@ -68,5 +68,5 @@ function Start-BgpPeer {
         })
     $reg.Bgp[$Name] = $S
     Start-PowerBgpRunspace -State $S -Entry 'Invoke-BgpPeerLoop'
-    Get-BgpPeer -Name $Name
+    Get-BgpSession -Name $Name
 }

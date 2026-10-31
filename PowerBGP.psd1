@@ -12,7 +12,7 @@
         'New-PacketField', 'New-Packet', 'Format-Packet',
         'New-BgpOpen', 'New-BgpKeepalive', 'New-BgpUpdate', 'New-BgpNotification',
         'ConvertFrom-BgpMessage',
-        'Start-BgpPeer', 'Get-BgpPeer', 'Stop-BgpPeer', 'Resume-BgpPeer', 'Remove-BgpPeer', 'Set-BgpPeer', 'Update-BgpPeer',
+        'Start-BgpSession', 'Get-BgpSession', 'Stop-BgpSession', 'Resume-BgpSession', 'Remove-BgpSession', 'Set-BgpSession', 'Update-BgpSession',
         'New-BgpPrefixRange', 'Export-BgpConfig', 'Import-BgpConfig',
         'Send-BgpMessage', 'Send-BgpUpdate', 'Get-BgpEvent', 'Get-BgpRoute',
         'New-BfdControl', 'ConvertFrom-BfdControl',
