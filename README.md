@@ -249,12 +249,20 @@ Ideas, roughly in the order I would tackle them:
 - Route refresh (RFC 2918) and enhanced route refresh (RFC 7313)
 - ADD-PATH (RFC 7911)
 - BFD: initiate Poll sequences, and the remaining authentication types (Keyed MD5, Meticulous Keyed MD5, Meticulous Keyed SHA1)
-- BFD authentication in the Pode REST layer and UI
+- BFD: echo mode, demand mode, IPv6 link-local sessions, and per-session auth fault injection (such as `-CorruptAuth`)
 - Event logging to a file (opt-in `-LogPath`, JSON lines)
 - API authentication for the Pode REST layer
 - More real-gear testing: BGP toward NSX, Windows Server BGP, Cisco, IPv6 and TCP-MD5
 - Other address families such as VPNv4 and EVPN
 - Allow-AS-in style inbound filter option
+- Conditional or delayed route advertisement
+- Session flap and route churn generators for stress testing
+- Max-prefix limit on inbound routes
+- More fault injection: AS-path loops, bogon prefixes and oversized messages
+- BGP Role and Only-To-Customer (RFC 9234)
+- `Export-BgpConfig` should also save BFD sessions, and encrypt stored keys and passwords
+- Pester coverage for every Pode REST route
+- GitHub release notes template
 
 ## 🚧 Limitations
 
