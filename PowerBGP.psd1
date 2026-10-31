@@ -25,7 +25,7 @@
         Tags         = @('BGP', 'BFD', 'Networking', 'Packet', 'NSX', 'Testing', 'Router', 'Linux', 'Windows')
         ProjectUri   = 'https://github.com/erikgraa/PowerBGP'
         LicenseUri   = 'https://github.com/erikgraa/PowerBGP/blob/main/LICENSE'
-        IconUri      = ''
+        IconUri      = 'https://raw.githubusercontent.com/erikgraa/PowerBGP/main/icon.png'
         ReleaseNotes = '0.5.0: BGP and BFD peers, route advertisement, bulk prefixes, peer and BFD editing, inbound route filters, IPv6 (MP-BGP) unicast, -LocalAddress, TCP-MD5 (Linux), config export/import, fault injection. Fixes: Format-Packet with pipeline input, ConvertFrom-BgpMessage MarkerValid.'
     } }
 }
