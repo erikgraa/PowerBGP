@@ -14,7 +14,7 @@ PowerBGP speaks just enough BGP-4 (RFC 4271) and BFD (RFC 5880) to peer with a r
 - 🧱 Build and parse OPEN, UPDATE, NOTIFICATION, KEEPALIVE and BFD control packets as plain `byte[]`
 - 🔧 Generic packet builder (`New-Packet`) for anything else you want to hand-craft
 
-> ℹ️ **Status:** 0.5, a test tool. Not a routing daemon. It does not install routes or forward traffic.
+> ℹ️ **Status:** a test tool. Not a routing daemon. It does not install routes or forward traffic.
 
 > ⚠️ **Lab use only.** Do not point PowerBGP at production routers or networks. It can advertise arbitrary prefixes and send malformed messages on purpose. Saved configs (`Export-BgpConfig`) store MD5 passwords in clear text, and the companion web UI/REST API has no authentication.
 
