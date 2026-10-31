@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.2
+
+- BFD: `-MultiHop` (RFC 5883, UDP 4784) and `-LocalAddress` on `Start-BfdSession` and `Update-BfdSession`; `Get-BfdSession` shows `LocalAddress`
+- BFD: reply with the Final bit when the peer sends a Poll
+
 ## 0.5.1
 
 - Fix the Gallery package: the `Public` and `Private` folders were flattened in 0.5.0, so the module exported nothing. 0.5.0 is unlisted.
