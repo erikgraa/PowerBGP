@@ -2,6 +2,7 @@ function Start-BgpSession {
     <#
     .SYNOPSIS
         Starts a BGP peer in a background runspace (active: connects out; -Passive: listens).
+        -LocalAddress binds the session to a specific source IP (useful for several sessions to one router, e.g. ECMP tests).
     .EXAMPLE
         Start-BgpSession -Name nsx-t0 -RemoteAddress 192.168.1.1 -RemoteAS 65000 -LocalAS 65001 -RouterId 10.0.0.99
     #>
@@ -10,6 +11,8 @@ function Start-BgpSession {
         [string]$Name,
         [string]$RemoteAddress,
         [uint32]$RemoteAS,
+        [ipaddress]$LocalAddress,
+        [ValidateSet('IPv4', 'IPv6')][string[]]$AddressFamily = 'IPv4',
         [Parameter(Mandatory)][uint32]$LocalAS,
         [Parameter(Mandatory)][ipaddress]$RouterId,
         [uint16]$HoldTime = 90,
@@ -42,10 +45,10 @@ function Start-BgpSession {
     $S = [hashtable]::Synchronized(@{
             Name               = $Name
             Config             = [pscustomobject]@{
-                RemoteAddress = $RemoteAddress; RemoteAS = $RemoteAS; LocalAS = $LocalAS; RouterId = $RouterId
+                RemoteAddress = $RemoteAddress; RemoteAS = $RemoteAS; LocalAddress = $(if ($LocalAddress) { "$LocalAddress" }); LocalAS = $LocalAS; RouterId = $RouterId
                 HoldTime = $HoldTime; Port = $Port; Passive = [bool]$Passive; Ttl = $Ttl
                 AutoReconnect = [bool]$AutoReconnect; ReconnectDelay = $ReconnectDelay; ReconnectMaxDelay = $ReconnectMaxDelay
-                Password = $Password; InboundFilter = $rules; InboundDefault = $InboundDefault
+                Password = $Password; AddressFamily = @($AddressFamily | Select-Object -Unique); InboundFilter = $rules; InboundDefault = $InboundDefault
             }
             Filtered           = 0
             Reconnects         = 0

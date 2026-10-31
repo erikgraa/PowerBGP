@@ -4,7 +4,7 @@
 
 Stand up **BGP** and **BFD** test peers straight from PowerShell, and craft any packet byte by byte.
 
-PowerBGP speaks just enough BGP-4 (RFC 4271) and BFD (RFC 5880) to peer with a real router, so you can test your physical devices, NSX Tier-0 gateways or Windows Server BGP without lab gear on the other end. It is written entirely in PowerShell, with no binaries or dependencies.
+PowerBGP speaks just enough BGP-4 (RFC 4271) and BFD (RFC 5880) to peer with a real router, so you can test against VMware Cloud Foundation (NSX) edge clusters, Windows Server BGP, MikroTik, Cisco or any other RFC-compliant BGP engine without lab gear on the other end. It is written entirely in PowerShell, with no binaries or dependencies.
 
 - Establish sessions, advertise and withdraw prefixes, and watch what the neighbour sends you
 - Run BFD alongside BGP and see how the router reacts when the session drops
@@ -14,9 +14,11 @@ PowerBGP speaks just enough BGP-4 (RFC 4271) and BFD (RFC 5880) to peer with a r
 
 > **Status:** 0.5, a test tool. Not a routing daemon. It does not install routes or forward traffic.
 
+> **Lab use only.** Do not point PowerBGP at production routers or networks. It can advertise arbitrary prefixes and send malformed messages on purpose. Saved configs (`Export-BgpConfig`) store MD5 passwords in clear text, and the companion web UI/REST API has no authentication.
+
 ## Requirements
 
-- PowerShell 7.2 or later (Windows, Linux, macOS)
+- PowerShell 7.4 or later (Windows, Linux, macOS)
 - TCP-MD5 passwords (RFC 2385) need PowerShell on **Linux**; the Windows TCP stack cannot do it
 - Binding to port 179 may need elevated rights; use `-Port` for a high port while testing
 
@@ -71,6 +73,35 @@ Update-BgpSession -Name lab -InboundFilter $filter -InboundDefault Deny   # rest
 ```
 
 A rule can match on `-Prefix` (with `-Ge`/`-Le` for length ranges, like a prefix-list), `-AsPathContains` and `-Community`; all conditions on a rule must match.
+
+### IPv6 (MP-BGP)
+
+Add `-AddressFamily IPv6` to advertise the IPv6 unicast capability (RFC 4760). IPv6 prefixes then travel in `MP_REACH_NLRI` / `MP_UNREACH_NLRI`, and the session itself can run over IPv4 or IPv6.
+
+```powershell
+Start-BgpSession -Name v6 -RemoteAddress 2001:db8::1 -RemoteAS 65000 -LocalAS 65001 -RouterId 192.168.1.50 `
+                 -AddressFamily IPv4, IPv6
+Send-BgpUpdate -Name v6 -Nlri 2001:db8:10::/48 -NextHop 2001:db8::50
+Send-BgpUpdate -Name v6 -Nlri 10.10.0.0/24                 # IPv4 still works on the same session
+```
+
+Over an IPv4 session, `-NextHop` must be given explicitly for IPv6 prefixes. Inbound filters understand IPv6 prefixes too.
+
+### Several sessions to one router (ECMP tests)
+
+PowerBGP does no best-path selection itself, but it can make a router see equal-cost paths. Bind each session to its own source address with `-LocalAddress`, peer with the router from each, and advertise the same prefix with the same attributes:
+
+```powershell
+'192.168.1.50', '192.168.1.51' | ForEach-Object {
+    Start-BgpSession -Name "ecmp-$_" -RemoteAddress 192.168.1.1 -RemoteAS 65000 -LocalAS 65001 `
+                     -RouterId $_ -LocalAddress $_ -AutoReconnect
+}
+# the router needs a neighbour entry for each source address
+Send-BgpUpdate -Name ecmp-192.168.1.50 -Nlri 10.200.0.0/24 -NextHop 192.168.1.50 -AsPath 65001
+Send-BgpUpdate -Name ecmp-192.168.1.51 -Nlri 10.200.0.0/24 -NextHop 192.168.1.51 -AsPath 65001
+```
+
+Then check on the router that both next hops are installed. Use different `-LocalAS` values per session to exercise multi-AS multipath.
 
 ### Lots of routes
 
@@ -149,11 +180,22 @@ Each peer runs its finite state machine (Idle, Connect, Active, OpenSent, OpenCo
 
 ## Limitations
 
-- IPv4 unicast only (no IPv6 or other address families yet)
+- IPv4 and IPv6 unicast only (no VPN, EVPN or other address families)
 - No route processing: learned routes are recorded, never installed
 - BFD is single-hop asynchronous mode only, with no Poll/Final sequence and no authentication
 - TCP-MD5 is Linux only and IPv4 only
 - Nothing persists across restarts except what you export yourself
+
+## Container
+
+A `Containerfile` is included for running PowerBGP in a PowerShell container (tested with rootful Podman):
+
+```bash
+podman build -f Containerfile -t powerbgp .
+podman run -it --rm --network host powerbgp
+```
+
+Host networking lets sessions reach your lab devices, and the container runs as root so it can bind port 179.
 
 ## Tests
 

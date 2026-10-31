@@ -9,7 +9,7 @@ function Export-BgpConfig {
     $peers = foreach ($S in @($reg.Bgp.Values)) {
         $c = $S.Config
         [ordered]@{
-            Name = $S.Name; RemoteAddress = $c.RemoteAddress; RemoteAS = $c.RemoteAS; LocalAS = $c.LocalAS
+            Name = $S.Name; RemoteAddress = $c.RemoteAddress; RemoteAS = $c.RemoteAS; LocalAddress = $c.LocalAddress; AddressFamily = @($c.AddressFamily); LocalAS = $c.LocalAS
             RouterId = "$($c.RouterId)"; HoldTime = $c.HoldTime; Port = $c.Port; Passive = $c.Passive; Ttl = $c.Ttl
             AutoReconnect = $c.AutoReconnect; ReconnectDelay = $c.ReconnectDelay; ReconnectMaxDelay = $c.ReconnectMaxDelay
             Password = $c.Password; InboundDefault = $c.InboundDefault; InboundFilter = @($c.InboundFilter)
@@ -30,6 +30,8 @@ function Import-BgpConfig {
         $a = @{ Name = $p.Name; LocalAS = [uint32]$p.LocalAS; RouterId = [ipaddress]$p.RouterId; HoldTime = [uint16]$p.HoldTime; Port = [int]$p.Port }
         if ($p.RemoteAddress) { $a.RemoteAddress = $p.RemoteAddress }
         if ($p.RemoteAS) { $a.RemoteAS = [uint32]$p.RemoteAS }
+        if ($p.LocalAddress) { $a.LocalAddress = [ipaddress]$p.LocalAddress }
+        if ($p.AddressFamily) { $a.AddressFamily = @($p.AddressFamily) }
         if ($p.Passive) { $a.Passive = $true }
         if ($p.Ttl) { $a.Ttl = [int]$p.Ttl }
         if ($p.AutoReconnect) { $a.AutoReconnect = $true }

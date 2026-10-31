@@ -17,6 +17,8 @@ function Resume-BgpSession {
         if ($c.RemoteAddress) { $p.RemoteAddress = $c.RemoteAddress }
         if ($c.RemoteAS) { $p.RemoteAS = $c.RemoteAS }
         if ($c.Ttl) { $p.Ttl = $c.Ttl }
+        if ($c.LocalAddress) { $p.LocalAddress = $c.LocalAddress }
+        if ($c.AddressFamily) { $p.AddressFamily = $c.AddressFamily }
         if ($c.Password) { $p.Password = $c.Password }
         if ($c.InboundFilter) { $p.InboundFilter = $c.InboundFilter }
         $p.InboundDefault = $c.InboundDefault
