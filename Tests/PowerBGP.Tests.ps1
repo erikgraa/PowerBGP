@@ -169,7 +169,7 @@ Describe 'TCP-MD5 password' {
         $d = (Get-Date).AddSeconds(12); while ((Get-Date) -lt $d -and (Get-BgpSession m-d).State -ne 'Established') { Start-Sleep -Milliseconds 300 }
         (Get-BgpSession m-d).State | Should -Be 'Established'
         (Get-BgpSession m-d).Md5 | Should -BeTrue
-        Get-BgpSession m-* | Stop-BgpSession
+        Get-BgpSession m-* | Remove-BgpSession -Confirm:$false
     }
 }
 
