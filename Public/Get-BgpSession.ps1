@@ -4,7 +4,7 @@ function Get-BgpSession {
     $reg = Get-PowerBgpRegistry
     foreach ($S in @($reg.Bgp.Values)) {
         if ($S.Name -notlike $Name) { continue }
-        $up = if ($S.Established) { (Get-Date) - $S.Established } else { $null }
+        $up = if ($S.Established -is [datetime]) { (Get-Date) - [datetime]$S.Established } else { $null }
         [pscustomobject]@{
             PSTypeName       = 'PowerBGP.Peer'
             Name             = $S.Name
