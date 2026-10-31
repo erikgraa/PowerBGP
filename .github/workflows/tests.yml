@@ -20,7 +20,12 @@ jobs:
         shell: pwsh
         run: |
           $dest = Join-Path $env:RUNNER_TEMP 'pwsh'
-          & ([scriptblock]::Create((Invoke-RestMethod https://aka.ms/install-powershell.ps1))) -Version ${{ matrix.pwsh }} -Destination $dest
+          $v = '${{ matrix.pwsh }}'
+          $file = if ($IsWindows) { "PowerShell-$v-win-x64.zip" } else { "powershell-$v-linux-x64.tar.gz" }
+          $out = Join-Path $env:RUNNER_TEMP $file
+          Invoke-WebRequest "https://github.com/PowerShell/PowerShell/releases/download/v$v/$file" -OutFile $out
+          New-Item $dest -ItemType Directory | Out-Null
+          if ($IsWindows) { Expand-Archive $out $dest } else { tar -xzf $out -C $dest; chmod +x "$dest/pwsh" }
           $dest | Out-File $env:GITHUB_PATH -Append -Encoding utf8
       - name: Show version
         shell: pwsh

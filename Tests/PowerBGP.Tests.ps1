@@ -163,13 +163,13 @@ Describe 'TCP-MD5 password' {
         { Start-BgpSession -Name md5x -Passive -Port 12599 -LocalAS 65001 -RouterId 1.1.1.1 -Password secret } | Should -Throw '*Linux*'
     }
     It 'establishes with matching passwords and refuses mismatches' -Skip:(-not $IsLinux) {
-        $null = Start-BgpSession -Name m-l -Passive -Port 12501 -RemoteAddress 127.0.0.1 -LocalAS 65001 -RemoteAS 65002 -RouterId 1.1.1.1 -Password secret
+        $null = Start-BgpSession -Name m-l -Passive -Port 12501 -RemoteAddress 127.0.0.2 -LocalAS 65001 -RemoteAS 65002 -RouterId 1.1.1.1 -Password secret
         Start-Sleep 1
-        $null = Start-BgpSession -Name m-d -RemoteAddress 127.0.0.1 -Port 12501 -LocalAS 65002 -RemoteAS 65001 -RouterId 2.2.2.2 -Password secret
+        $null = Start-BgpSession -Name m-d -RemoteAddress 127.0.0.1 -LocalAddress 127.0.0.2 -Port 12501 -LocalAS 65002 -RemoteAS 65001 -RouterId 2.2.2.2 -Password secret
         $d = (Get-Date).AddSeconds(12); while ((Get-Date) -lt $d -and (Get-BgpSession m-d).State -ne 'Established') { Start-Sleep -Milliseconds 300 }
         (Get-BgpSession m-d).State | Should -Be 'Established'
         (Get-BgpSession m-d).Md5 | Should -BeTrue
-        Get-BgpSession m-* | Stop-BgpSession
+        Get-BgpSession m-* | Remove-BgpSession -Confirm:$false
     }
 }
 
