@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1
+
+- Fix the Gallery package: the `Public` and `Private` folders were flattened in 0.5.0, so the module exported nothing. 0.5.0 is unlisted.
+
 ## 0.5.0
 
 First Gallery release.
