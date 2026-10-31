@@ -134,7 +134,13 @@ function Invoke-BgpPeerSession {
                         $u = ConvertFrom-BgpMessage $msg -TwoOctetAs:(-not $S.PeerFourOctet)
                         $dummy = $null
                         foreach ($p in $u.Withdrawn) { $null = $S.Learned.TryRemove($p, [ref]$dummy) }
+                        $rules = $S.Config.InboundFilter; $defaultAction = $S.Config.InboundDefault
                         foreach ($p in $u.Nlri) {
+                            if (($rules -or $defaultAction -eq 'Deny') -and -not (Test-BgpInboundFilter -Rules $rules -Default $defaultAction -Prefix $p -Update $u)) {
+                                $S.Filtered++
+                                $null = $S.Learned.TryRemove($p, [ref]$dummy)
+                                continue
+                            }
                             $S.Learned[$p] = [pscustomobject]@{
                                 Peer = $S.Name; Prefix = $p; NextHop = "$($u.NextHop)"; AsPath = ($u.AsPath -join ' ')
                                 Origin = $u.Origin; Med = $u.Med; LocalPref = $u.LocalPref; Community = ($u.Community -join ' '); Received = Get-Date

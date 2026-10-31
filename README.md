@@ -54,6 +54,24 @@ Passive mode, to have the router connect to you:
 Start-BgpSession -Name inbound -Passive -RemoteAddress 192.168.1.1 -RemoteAS 65000 -LocalAS 65001 -RouterId 192.168.1.50
 ```
 
+### Inbound route filters
+
+Filter what a session accepts. Rules are checked in order, first match wins, and anything unmatched gets `-InboundDefault` (`Permit` unless you say otherwise). Denied routes never reach `Get-BgpRoute`; `Get-BgpSession` counts them in `Filtered`.
+
+```powershell
+$filter = @(
+    New-BgpFilterRule -Action Deny   -Prefix 10.0.0.0/8 -Le 32      # anything inside 10/8
+    New-BgpFilterRule -Action Deny   -Prefix 0.0.0.0/0              # the default route (exact match)
+    New-BgpFilterRule -Action Permit -AsPathContains 65100
+)
+Start-BgpSession -Name lab -RemoteAddress 192.168.1.1 -RemoteAS 65000 -LocalAS 65001 `
+                 -RouterId 192.168.1.50 -InboundFilter $filter -InboundDefault Permit
+
+Update-BgpSession -Name lab -InboundFilter $filter -InboundDefault Deny   # restarts the session
+```
+
+A rule can match on `-Prefix` (with `-Ge`/`-Le` for length ranges, like a prefix-list), `-AsPathContains` and `-Community`; all conditions on a rule must match.
+
 ### Lots of routes
 
 ```powershell
@@ -117,7 +135,7 @@ MD5 passwords are saved in **clear text**. Keep the file out of source control.
 | Area | Cmdlets |
 | --- | --- |
 | Packet builder | `New-PacketField`, `New-Packet`, `Format-Packet` |
-| BGP messages | `New-BgpOpen`, `New-BgpUpdate`, `New-BgpKeepalive`, `New-BgpNotification`, `ConvertFrom-BgpMessage`, `New-BgpPrefixRange` |
+| BGP messages | `New-BgpOpen`, `New-BgpUpdate`, `New-BgpKeepalive`, `New-BgpNotification`, `ConvertFrom-BgpMessage`, `New-BgpPrefixRange`, `New-BgpFilterRule` |
 | BFD packets | `New-BfdControl`, `ConvertFrom-BfdControl` |
 | BGP sessions | `Start-BgpSession`, `Get-BgpSession`, `Update-BgpSession`, `Stop-BgpSession`, `Resume-BgpSession`, `Remove-BgpSession`, `Send-BgpUpdate`, `Send-BgpMessage`, `Set-BgpSession`, `Get-BgpRoute`, `Get-BgpEvent` |
 | BFD sessions | `Start-BfdSession`, `Get-BfdSession`, `Update-BfdSession`, `Stop-BfdSession`, `Resume-BfdSession`, `Remove-BfdSession`, `Set-BfdSession` |

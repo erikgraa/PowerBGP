@@ -19,8 +19,11 @@ function Start-BgpSession {
         [switch]$AutoReconnect,
         [string]$Password,
         [ValidateRange(1, 3600)][int]$ReconnectDelay = 5,
-        [ValidateRange(1, 3600)][int]$ReconnectMaxDelay = 60
+        [ValidateRange(1, 3600)][int]$ReconnectMaxDelay = 60,
+        [object[]]$InboundFilter = @(),
+        [ValidateSet('Permit', 'Deny')][string]$InboundDefault = 'Permit'
     )
+    $rules = @(ConvertTo-BgpFilterRule $InboundFilter)
     if (-not $Passive -and -not $RemoteAddress) { throw '-RemoteAddress is required unless -Passive.' }
     if ($Password -and -not $IsLinux) { throw '-Password (TCP-MD5) is only supported when PowerShell runs on Linux (the Windows TCP stack has no TCP_MD5SIG).' }
     if (-not $Name) { $Name = if ($RemoteAddress) { $RemoteAddress } else { "passive-$Port" } }
@@ -42,8 +45,9 @@ function Start-BgpSession {
                 RemoteAddress = $RemoteAddress; RemoteAS = $RemoteAS; LocalAS = $LocalAS; RouterId = $RouterId
                 HoldTime = $HoldTime; Port = $Port; Passive = [bool]$Passive; Ttl = $Ttl
                 AutoReconnect = [bool]$AutoReconnect; ReconnectDelay = $ReconnectDelay; ReconnectMaxDelay = $ReconnectMaxDelay
-                Password = $Password
+                Password = $Password; InboundFilter = $rules; InboundDefault = $InboundDefault
             }
+            Filtered           = 0
             Reconnects         = 0
             NextRetry          = $null
             LastEstablished    = $false

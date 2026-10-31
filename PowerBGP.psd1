@@ -13,7 +13,7 @@
         'New-BgpOpen', 'New-BgpKeepalive', 'New-BgpUpdate', 'New-BgpNotification',
         'ConvertFrom-BgpMessage',
         'Start-BgpSession', 'Get-BgpSession', 'Stop-BgpSession', 'Resume-BgpSession', 'Remove-BgpSession', 'Set-BgpSession', 'Update-BgpSession',
-        'New-BgpPrefixRange', 'Export-BgpConfig', 'Import-BgpConfig',
+        'New-BgpPrefixRange', 'New-BgpFilterRule', 'Export-BgpConfig', 'Import-BgpConfig',
         'Send-BgpMessage', 'Send-BgpUpdate', 'Get-BgpEvent', 'Get-BgpRoute',
         'New-BfdControl', 'ConvertFrom-BfdControl',
         'Start-BfdSession', 'Get-BfdSession', 'Stop-BfdSession', 'Resume-BfdSession', 'Update-BfdSession', 'Remove-BfdSession', 'Set-BfdSession'

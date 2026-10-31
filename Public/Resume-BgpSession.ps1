@@ -18,6 +18,8 @@ function Resume-BgpSession {
         if ($c.RemoteAS) { $p.RemoteAS = $c.RemoteAS }
         if ($c.Ttl) { $p.Ttl = $c.Ttl }
         if ($c.Password) { $p.Password = $c.Password }
+        if ($c.InboundFilter) { $p.InboundFilter = $c.InboundFilter }
+        $p.InboundDefault = $c.InboundDefault
         $kept = @($old.Advertised.Values)
 
         $null = Start-BgpSession @p

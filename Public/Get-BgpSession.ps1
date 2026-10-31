@@ -21,6 +21,7 @@ function Get-BgpSession {
             Sent             = $S.Sent
             Received         = $S.Received
             Learned          = $S.Learned.Count
+            Filtered         = $S.Filtered
             Advertised       = $S.Advertised.Count
             KeepalivesPaused = [bool]$S.SuppressKeepalives
             AutoReconnect    = $S.Config.AutoReconnect

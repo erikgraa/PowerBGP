@@ -12,7 +12,7 @@ function Export-BgpConfig {
             Name = $S.Name; RemoteAddress = $c.RemoteAddress; RemoteAS = $c.RemoteAS; LocalAS = $c.LocalAS
             RouterId = "$($c.RouterId)"; HoldTime = $c.HoldTime; Port = $c.Port; Passive = $c.Passive; Ttl = $c.Ttl
             AutoReconnect = $c.AutoReconnect; ReconnectDelay = $c.ReconnectDelay; ReconnectMaxDelay = $c.ReconnectMaxDelay
-            Password = $c.Password
+            Password = $c.Password; InboundDefault = $c.InboundDefault; InboundFilter = @($c.InboundFilter)
         }
     }
     [ordered]@{ Version = 1; Peers = @($peers) } | ConvertTo-Json -Depth 5 | Set-Content -Path $Path
@@ -36,6 +36,8 @@ function Import-BgpConfig {
         if ($p.ReconnectDelay) { $a.ReconnectDelay = [int]$p.ReconnectDelay }
         if ($p.ReconnectMaxDelay) { $a.ReconnectMaxDelay = [int]$p.ReconnectMaxDelay }
         if ($p.Password) { $a.Password = $p.Password }
+        if ($p.InboundFilter) { $a.InboundFilter = @(ConvertTo-BgpFilterRule $p.InboundFilter) }
+        if ($p.InboundDefault) { $a.InboundDefault = $p.InboundDefault }
         Start-BgpSession @a
     }
 }

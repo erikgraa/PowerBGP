@@ -18,7 +18,9 @@ function Update-BgpSession {
         [bool]$AutoReconnect,
         [string]$Password,
         [ValidateRange(1, 3600)][int]$ReconnectDelay,
-        [ValidateRange(1, 3600)][int]$ReconnectMaxDelay
+        [ValidateRange(1, 3600)][int]$ReconnectMaxDelay,
+        [object[]]$InboundFilter,
+        [ValidateSet('Permit', 'Deny')][string]$InboundDefault
     )
     $S = (Get-PowerBgpRegistry).Bgp[$Name]
     if (-not $S) { throw "No such peer '$Name'." }
@@ -31,5 +33,7 @@ function Update-BgpSession {
     foreach ($k in 'RemoteAS', 'LocalAS', 'RouterId', 'HoldTime', 'Port', 'Ttl', 'AutoReconnect', 'Password', 'ReconnectDelay', 'ReconnectMaxDelay') {
         if ($PSBoundParameters.ContainsKey($k)) { $S.Config.$k = $PSBoundParameters[$k] }
     }
+    if ($PSBoundParameters.ContainsKey('InboundFilter')) { $S.Config.InboundFilter = @(ConvertTo-BgpFilterRule $InboundFilter) }
+    if ($PSBoundParameters.ContainsKey('InboundDefault')) { $S.Config.InboundDefault = $InboundDefault }
     if ($wasRunning) { Resume-BgpSession -Name $Name } else { Get-BgpSession -Name $Name }
 }
