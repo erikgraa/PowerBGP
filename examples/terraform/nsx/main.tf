@@ -50,8 +50,9 @@ resource "nsxt_policy_bgp_neighbor" "powerbgp" {
   # Graceful restart: PowerBGP supports RFC 4724 (-GracefulRestart)
   graceful_restart_mode = "HELPER_ONLY"
 
-  # TCP-MD5 (RFC 2385) needs the Linux/container build of PowerBGP:
-  # password = var.md5_key
+  # TCP-MD5 (RFC 2385): needs the Linux/container build of PowerBGP with the same -Password.
+  # Leave md5_key null for no authentication.
+  password = var.md5_key
 
   bfd_config {
     enabled  = true
