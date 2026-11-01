@@ -236,10 +236,11 @@ Each peer runs its finite state machine (Idle, Connect, Active, OpenSent, OpenCo
 |--------|-------------------|
 | MikroTik RouterOS v7 | BGP reaching Established, auto-reconnect, route advertisement, BFD Up/Up (needs `use-bfd=yes` and a `/routing/bfd/configuration` entry) |
 | VMware NSX edge (Tier-0 gateway) | BGP reaching Established with TCP-MD5 (from the Linux container), and BFD Up, both single-hop (same L2 segment, TTL 255) and `-MultiHop` (UDP 4784) |
+| Cisco IOS-XE | BGP reaching Established and BFD Up (needs `fall-over bfd` on the neighbor and `bfd interval 300 min_rx 300 multiplier 3` on the interface) |
 | PowerBGP against itself (loopback) | BGP, MP-BGP IPv6, inbound filters, BFD, stop/resume, and TCP-MD5 in a Linux container |
 | CI | Pester on Ubuntu and Windows with PowerShell 7.4 and 7.5 |
 
-Not yet tested against real gear: Windows Server BGP, Cisco, and IPv6 on a real router. Reports are welcome.
+Not yet tested against real gear: Windows Server BGP and IPv6 on a real router. Reports are welcome.
 
 ## 🗺️ TODO
 
@@ -253,7 +254,7 @@ Ideas, roughly in the order I would tackle them:
 - BFD: echo mode, demand mode, IPv6 link-local sessions, and per-session auth fault injection (such as `-CorruptAuth`)
 - Event logging to a file (opt-in `-LogPath`, JSON lines)
 - API authentication for the Pode REST layer
-- More real-gear testing: Windows Server BGP, Cisco and IPv6
+- More real-gear testing: Windows Server BGP and IPv6
 - Other address families such as VPNv4 and EVPN
 - Allow-AS-in style inbound filter option
 - Conditional or delayed route advertisement
