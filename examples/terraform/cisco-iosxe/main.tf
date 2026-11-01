@@ -46,6 +46,6 @@ resource "iosxe_bgp_neighbor" "powerbgp" {
 # Required: with default_ipv4_unicast = false the neighbor exchanges no IPv4 routes until activated
 resource "iosxe_bgp_ipv4_unicast_neighbor" "powerbgp" {
   asn      = iosxe_bgp.this.asn
-  ip       = var.powerbgp_ip
+  ip       = iosxe_bgp_neighbor.powerbgp.ip # depend on the neighbor so it exists before activation
   activate = true
 }
