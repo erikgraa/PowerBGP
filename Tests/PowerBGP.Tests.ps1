@@ -161,7 +161,7 @@ Describe 'BFD session engine (loopback)' {
 Describe 'TCP-MD5 password' {
     It 'accepts a SecureString or a string' {
         InModuleScope PowerBGP {
-            $ss = ConvertTo-SecureString 'hunter2' -AsPlainText -Force
+            $ss = [securestring]::new(); 'hunter2'.ToCharArray() | ForEach-Object { $ss.AppendChar($_) }
             ConvertFrom-BgpPassword $ss | Should -Be 'hunter2'
             ConvertFrom-BgpPassword 'plain' | Should -Be 'plain'
             ConvertFrom-BgpPassword $null | Should -Be ''
