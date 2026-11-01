@@ -159,6 +159,17 @@ Describe 'BFD session engine (loopback)' {
 }
 
 Describe 'TCP-MD5 password' {
+    It 'accepts a SecureString or a string' {
+        InModuleScope PowerBGP {
+            $ss = [securestring]::new(); 'hunter2'.ToCharArray() | ForEach-Object { $ss.AppendChar($_) }
+            ConvertFrom-BgpPassword $ss | Should -Be 'hunter2'
+            ConvertFrom-BgpPassword 'plain' | Should -Be 'plain'
+            ConvertFrom-BgpPassword $null | Should -Be ''
+        }
+    }
+    It 'rejects other types' {
+        { Start-BgpSession -Name md5t -Passive -Port 12598 -LocalAS 65001 -RouterId 1.1.1.1 -Password 42 } | Should -Throw
+    }
     It 'is rejected on non-Linux platforms' -Skip:$IsLinux {
         { Start-BgpSession -Name md5x -Passive -Port 12599 -LocalAS 65001 -RouterId 1.1.1.1 -Password secret } | Should -Throw '*Linux*'
     }

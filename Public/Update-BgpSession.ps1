@@ -18,7 +18,7 @@ function Update-BgpSession {
         [bool]$AutoReconnect,
         [bool]$GracefulRestart,
         [ValidateRange(0, 4095)][int]$RestartTime,
-        [string]$Password,
+        [ValidateScript({ $_ -is [string] -or $_ -is [securestring] })][object]$Password,
         [string]$LocalAddress,
         [ValidateSet('IPv4', 'IPv6')][string[]]$AddressFamily,
         [ValidateRange(1, 3600)][int]$ReconnectMaxDelay,
@@ -27,6 +27,7 @@ function Update-BgpSession {
     )
     $S = (Get-PowerBgpRegistry).Bgp[$Name]
     if (-not $S) { throw "No such peer '$Name'." }
+    if ($PSBoundParameters.ContainsKey('Password')) { $Password = $PSBoundParameters['Password'] = ConvertFrom-BgpPassword $Password }
     if ($PSBoundParameters.ContainsKey('Password') -and $Password -and -not $IsLinux) {
         throw '-Password (TCP-MD5) is only supported when PowerShell runs on Linux.'
     }

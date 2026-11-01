@@ -221,7 +221,7 @@ Use `Get-Help <cmdlet> -Examples` for details.
 | [6793](https://www.rfc-editor.org/rfc/rfc6793) | 4-octet AS numbers | 4-byte ASNs and `AS_PATH` |
 | [4724](https://www.rfc-editor.org/rfc/rfc4724) | Graceful Restart | Capability, End-of-RIB, stale routes |
 | [1997](https://www.rfc-editor.org/rfc/rfc1997) | Communities | `COMMUNITIES` attribute |
-| [2385](https://www.rfc-editor.org/rfc/rfc2385) | TCP MD5 signature | `-Password` (Linux) |
+| [2385](https://www.rfc-editor.org/rfc/rfc2385) | TCP MD5 signature | `-Password` (Linux, string or SecureString) |
 | [5880](https://www.rfc-editor.org/rfc/rfc5880) | BFD | Control packets and session state |
 | [5881](https://www.rfc-editor.org/rfc/rfc5881) | BFD for IPv4/IPv6 single hop | UDP 3784, TTL 255 |
 | [5883](https://www.rfc-editor.org/rfc/rfc5883) | BFD multihop | `-MultiHop`, UDP 4784 |
