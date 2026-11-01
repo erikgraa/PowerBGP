@@ -2,7 +2,7 @@
 # Provider: https://registry.terraform.io/providers/terraform-routeros/routeros
 #
 # PowerBGP side:
-#   Start-BgpSession -Name mikrotik -RemoteAddress <router IP> -RemoteAS 65000 -LocalAS 65001
+#   Start-BgpSession -Name mikrotik -RemoteAddress <router IP> -RemoteAS 65001 -LocalAS 65000
 #   Start-BfdSession -Name mikrotik-bfd -RemoteAddress <router IP>
 
 terraform {
@@ -11,36 +11,6 @@ terraform {
       source = "terraform-routeros/routeros"
     }
   }
-}
-
-variable "ros_hosturl" {
-  type    = string
-  default = "https://192.168.88.1"
-}
-
-variable "ros_username" {
-  type    = string
-  default = "admin"
-}
-
-variable "ros_password" {
-  type      = string
-  sensitive = true
-}
-
-variable "powerbgp_ip" {
-  type    = string
-  default = "192.168.88.50"
-}
-
-variable "powerbgp_as" {
-  type    = string
-  default = "65001"
-}
-
-variable "mikrotik_as" {
-  type    = string
-  default = "65000"
 }
 
 provider "routeros" {
