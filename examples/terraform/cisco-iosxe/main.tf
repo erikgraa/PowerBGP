@@ -5,8 +5,11 @@
 #   Start-BgpSession -Name cisco -RemoteAddress <router IP> -RemoteAS 65002 -LocalAS 65000
 #   Start-BfdSession -Name cisco-bfd -RemoteAddress <router IP>
 #
-# BFD timers are configured per interface on IOS-XE (bfd interval ... min_rx ... multiplier ...)
-# and are not part of this example.
+# BFD timers are configured per interface on IOS-XE and are not part of this example. BFD will not
+# start until you add this to the interface facing PowerBGP (a routed port or a Vlan SVI):
+#   interface <interface>
+#    bfd interval 300 min_rx 300 multiplier 3
+# Also allow inbound UDP 3784 (single-hop BFD) through the firewall on the PowerBGP host.
 
 terraform {
   required_providers {
