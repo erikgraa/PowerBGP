@@ -24,8 +24,9 @@ variable "locale_service_name" {
   default = null
 }
 
-# Names of existing Tier-0 uplink interfaces to peer from; empty = NSX uses all uplinks
-variable "source_interface_names" {
+# IPs of existing Tier-0 uplink interfaces to peer from (the "Source Addresses" in the NSX UI)
+# Empty = NSX uses all uplinks
+variable "source_addresses" {
   type    = list(string)
   default = []
 }
