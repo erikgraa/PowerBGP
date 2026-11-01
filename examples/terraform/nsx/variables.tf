@@ -47,3 +47,10 @@ variable "nsx_as" {
   description = "Local AS the NSX neighbor uses towards PowerBGP"
   default     = "65003"
 }
+
+variable "md5_key" {
+  type        = string
+  description = "TCP-MD5 password for the BGP neighbor (null = no authentication)"
+  default     = null
+  sensitive   = true
+}
