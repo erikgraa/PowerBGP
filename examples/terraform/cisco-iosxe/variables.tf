@@ -27,3 +27,10 @@ variable "cisco_as" {
   type    = string
   default = "65002"
 }
+
+variable "md5_key" {
+  type        = string
+  description = "TCP-MD5 password for the BGP neighbor (null = no authentication)"
+  default     = null
+  sensitive   = true
+}
