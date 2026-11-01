@@ -1,0 +1,8 @@
+# Copy to terraform.tfvars and adjust
+ros_hosturl  = "https://192.168.88.1"
+ros_username = "admin"
+ros_password = "change-me"
+
+powerbgp_ip = "192.168.88.50"
+powerbgp_as = "65000"
+mikrotik_as = "65001"

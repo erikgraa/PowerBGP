@@ -1,0 +1,13 @@
+# Copy to terraform.tfvars and adjust
+nsx_host     = "nsx.lab.local"
+nsx_username = "admin"
+nsx_password = "change-me"
+
+tier0_name = "t0-gw"
+# locale_service_name = "default" # only if the Tier-0 has several locale services
+
+# Existing Tier-0 uplink interfaces to peer from; leave empty to use all uplinks
+source_interface_names = ["uplink-1"]
+
+powerbgp_ip = "192.168.88.50"
+powerbgp_as = "65000"
