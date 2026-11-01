@@ -3,7 +3,9 @@ name: Tests
 on:
   push:
     branches: [main]
+    paths-ignore: ['examples/**']
   pull_request:
+    paths-ignore: ['examples/**']
 
 jobs:
   pester:
