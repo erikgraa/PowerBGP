@@ -37,9 +37,10 @@ resource "iosxe_bgp_neighbor" "powerbgp" {
   fall_over_bfd            = true
   fall_over_bfd_single_hop = true # use fall_over_bfd_multi_hop for a multihop peer
 
-  # TCP-MD5 (RFC 2385) needs the Linux/container build of PowerBGP:
-  # password_type = 0
-  # password      = var.md5_key
+  # TCP-MD5 (RFC 2385): needs the Linux/container build of PowerBGP with the same -Password.
+  # Leave md5_key null for no authentication.
+  password_type = var.md5_key == null ? null : 0
+  password      = var.md5_key
 }
 
 # Required: with default_ipv4_unicast = false the neighbor exchanges no IPv4 routes until activated

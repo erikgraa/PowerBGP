@@ -6,3 +6,6 @@ ros_password = "change-me"
 powerbgp_ip = "192.168.88.50"
 powerbgp_as = "65000"
 mikrotik_as = "65001"
+
+# TCP-MD5 password; needs PowerBGP on Linux (Start-BgpSession -Password). Omit for none.
+# md5_key = "change-me"

@@ -27,3 +27,10 @@ variable "mikrotik_as" {
   type    = string
   default = "65001"
 }
+
+variable "md5_key" {
+  type        = string
+  description = "TCP-MD5 password for the BGP neighbor (null = no authentication)"
+  default     = null
+  sensitive   = true
+}

@@ -27,8 +27,9 @@ resource "routeros_routing_bgp_connection" "powerbgp" {
   connect = true
   listen  = true
 
-  # TCP-MD5 (RFC 2385) needs the Linux/container build of PowerBGP:
-  # tcp_md5_key = var.md5_key
+  # TCP-MD5 (RFC 2385): needs the Linux/container build of PowerBGP with the same -Password.
+  # Leave md5_key null for no authentication.
+  tcp_md5_key = var.md5_key
 
   # Add if the peer is more than one hop away (and use Start-BfdSession -MultiHop):
   # multihop = true
