@@ -36,8 +36,13 @@ resource "nsxt_policy_bgp_neighbor" "powerbgp" {
   bgp_path         = data.nsxt_policy_gateway_locale_service.t0.bgp_path
   neighbor_address = var.powerbgp_ip
   remote_as_num    = var.powerbgp_as
-  hold_down_time   = 90
-  keep_alive_time  = 30
+
+  # Local AS this neighbor presents to PowerBGP, instead of the Tier-0's own AS
+  neighbor_local_as_config {
+    local_as_num = var.nsx_as
+  }
+  hold_down_time  = 90
+  keep_alive_time = 30
 
   # Existing Tier-0 uplink IPs NSX peers from (the "Source Addresses" in the UI); null = all uplinks
   source_addresses = length(var.source_addresses) > 0 ? var.source_addresses : null

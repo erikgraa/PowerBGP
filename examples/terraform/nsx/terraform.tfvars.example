@@ -11,3 +11,4 @@ source_addresses = ["192.168.88.1"]
 
 powerbgp_ip = "192.168.88.50"
 powerbgp_as = "65000"
+nsx_as      = "65003"

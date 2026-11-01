@@ -41,3 +41,9 @@ variable "powerbgp_as" {
   type    = string
   default = "65000"
 }
+
+variable "nsx_as" {
+  type        = string
+  description = "Local AS the NSX neighbor uses towards PowerBGP"
+  default     = "65003"
+}
