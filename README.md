@@ -275,7 +275,13 @@ Ideas, roughly in the order I would tackle them:
 
 ## 🐳 Container
 
-A `Containerfile` is included for running PowerBGP in a PowerShell container (tested with rootful Podman):
+A ready-made image (amd64 and arm64) is published to GHCR on each release:
+
+```bash
+podman run -it --rm --network host ghcr.io/erikgraa/powerbgp:latest
+```
+
+Or build it yourself from the included `Containerfile` (tested with rootful Podman):
 
 ```bash
 podman build -f Containerfile -t powerbgp .

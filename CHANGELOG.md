@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.1
+
+- CI: `container.yml` builds, smoke-tests and publishes a multi-arch image to `ghcr.io/erikgraa/powerbgp` on a `v*` tag or a manual run. Adds a `.dockerignore`. No module changes
+
 ## 0.8.0
 
 - BFD authentication (RFC 5880 section 6.7): `-AuthType SimplePassword|KeyedSHA1`, `-AuthKeyId`, `-AuthKey` on `Start-/Update-/Resume-BfdSession` and `New-/ConvertFrom-BfdControl`. `Get-BfdSession` shows `AuthType` and `AuthFailures`. Unauthenticated sessions are unchanged
