@@ -1,0 +1,8 @@
+# Copy to terraform.tfvars and adjust
+iosxe_host     = "192.168.88.2" # NETCONF port 830 unless you add :port
+iosxe_username = "admin"
+iosxe_password = "change-me"
+
+powerbgp_ip = "192.168.88.50"
+powerbgp_as = "65000"
+cisco_as    = "65002"

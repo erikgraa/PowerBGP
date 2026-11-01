@@ -1,6 +1,6 @@
 # Terraform examples
 
-Configure the **device side** of a peering with a PowerBGP test peer. Each example is self-contained and lab-oriented (`insecure` TLS, example addresses). Adjust the variables in each `variables.tf`, then:
+Configure the **device side** of a peering with a PowerBGP test peer. Each example is self-contained and lab-oriented (`insecure` TLS, example addresses). Adjust the variables in each `variables.tf`, or copy `terraform.tfvars.example` to `terraform.tfvars` (git-ignored, since it holds the device password) and edit it, then:
 
 ```bash
 terraform init
