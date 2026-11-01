@@ -24,6 +24,12 @@ variable "locale_service_name" {
   default = null
 }
 
+# Names of existing Tier-0 uplink interfaces to peer from; empty = NSX uses all uplinks
+variable "source_interface_names" {
+  type    = list(string)
+  default = []
+}
+
 variable "powerbgp_ip" {
   type        = string
   description = "PowerBGP address, in the same subnet as the Tier-0 uplink"

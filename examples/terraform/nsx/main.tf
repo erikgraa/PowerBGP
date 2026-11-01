@@ -30,6 +30,28 @@ data "nsxt_policy_gateway_locale_service" "t0" {
   display_name = var.locale_service_name
 }
 
+# Look up the IPs of existing uplink interfaces (the interface data source does not export IPs,
+# so the realization data source is used)
+data "nsxt_policy_gateway_interface" "source" {
+  for_each     = toset(var.source_interface_names)
+  display_name = each.value
+  gateway_path = data.nsxt_policy_tier0_gateway.t0.path
+}
+
+data "nsxt_policy_gateway_interface_realization" "source" {
+  for_each = data.nsxt_policy_gateway_interface.source
+  # In provider 3.12.1 this argument takes the interface path despite its name (newer docs: gateway_interface_path)
+  gateway_path = each.value.path
+}
+
+locals {
+  # Strip any /prefix in case realization returns CIDR notation
+  source_addresses = flatten([
+    for r in data.nsxt_policy_gateway_interface_realization.source :
+    [for ip in r.ip_address : split("/", ip)[0]]
+  ])
+}
+
 resource "nsxt_policy_bgp_neighbor" "powerbgp" {
   display_name     = "powerbgp-lab"
   description      = "PowerBGP test peer"
@@ -38,6 +60,9 @@ resource "nsxt_policy_bgp_neighbor" "powerbgp" {
   remote_as_num    = var.powerbgp_as
   hold_down_time   = 90
   keep_alive_time  = 30
+
+  # Source IPs NSX peers from (null = all uplinks)
+  source_addresses = length(local.source_addresses) > 0 ? local.source_addresses : null
 
   # Graceful restart: PowerBGP supports RFC 4724 (-GracefulRestart)
   graceful_restart_mode = "HELPER_ONLY"
