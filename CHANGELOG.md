@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.2
+
+- `-Password` on `Start-BgpSession` and `Update-BgpSession` now accepts a SecureString as well as a string (plain strings still work)
+
 ## 0.8.1
 
 - CI: `container.yml` builds, smoke-tests and publishes a multi-arch image to `ghcr.io/erikgraa/powerbgp` on a `v*` tag or a manual run. Adds a `.dockerignore`. No module changes

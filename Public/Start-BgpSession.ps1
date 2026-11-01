@@ -4,6 +4,7 @@ function Start-BgpSession {
         Starts a BGP peer in a background runspace (active: connects out; -Passive: listens).
         The session reconnects after a drop by default; use -AutoReconnect:$false to stay down.
         -LocalAddress binds the session to a specific source IP (useful for several sessions to one router, e.g. ECMP tests).
+        -Password (TCP-MD5, Linux only) takes a SecureString or a plain string.
     .EXAMPLE
         Start-BgpSession -Name nsx-t0 -RemoteAddress 192.168.1.1 -RemoteAS 65000 -LocalAS 65001 -RouterId 10.0.0.99
     #>
@@ -23,12 +24,13 @@ function Start-BgpSession {
         [switch]$AutoReconnect = $true,
         [switch]$GracefulRestart,
         [ValidateRange(0, 4095)][int]$RestartTime = 120,
-        [string]$Password,
+        [ValidateScript({ $_ -is [string] -or $_ -is [securestring] })][object]$Password,
         [ValidateRange(1, 3600)][int]$ReconnectDelay = 5,
         [ValidateRange(1, 3600)][int]$ReconnectMaxDelay = 60,
         [object[]]$InboundFilter = @(),
         [ValidateSet('Permit', 'Deny')][string]$InboundDefault = 'Permit'
     )
+    $Password = ConvertFrom-BgpPassword $Password
     $rules = @(ConvertTo-BgpFilterRule $InboundFilter)
     if (-not $Passive -and -not $RemoteAddress) { throw '-RemoteAddress is required unless -Passive.' }
     if ($Password -and -not $IsLinux) { throw '-Password (TCP-MD5) is only supported when PowerShell runs on Linux (the Windows TCP stack has no TCP_MD5SIG).' }
