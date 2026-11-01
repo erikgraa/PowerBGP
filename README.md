@@ -60,6 +60,7 @@ Passive mode, to have the router connect to you:
 Start-BgpSession -Name inbound -Passive -RemoteAddress 192.168.1.1 -RemoteAS 65000 -LocalAS 65001 -RouterId 192.168.1.50
 ```
 
+A session is **active** by default: it only connects out and never listens on TCP 179. `-Passive` only listens. Real routers do both, so against a router either mode works, but between two PowerBGP peers one side must be `-Passive`. If you see "actively refused", check that the listening side is passive (`Get-BgpSession` shows the `Mode`).
 ### Inbound route filters
 
 Filter what a session accepts. Rules are checked in order, first match wins, and anything unmatched gets `-InboundDefault` (`Permit` unless you say otherwise). Denied routes never reach `Get-BgpRoute`; `Get-BgpSession` counts them in `Filtered`.
@@ -290,6 +291,9 @@ podman run -it --rm --network host powerbgp
 
 Host networking lets sessions reach your lab devices, and the container runs as root so it can bind port 179.
 
+With `--network host`, `-p` is ignored: the container uses the host's IP and ports directly. Allow TCP 179 (and UDP 3784/4784 for BFD) in the host firewall, and make sure nothing else (FRR, BIRD) holds port 179. Use `-LocalAddress` to pick the source IP.
+
+On Windows, WSL2 is NAT'd by default, so a host-networked container gets the WSL VM's IP rather than your Windows one. To share the Windows IP, set `networkingMode=mirrored` under `[wsl2]` in `%UserProfile%\.wslconfig` and run `wsl --shutdown`. Docker Desktop does not expose the Windows IP with `--network host`, so use Podman in WSL.
 ## 🧪 Tests
 
 ```powershell
