@@ -3,6 +3,7 @@
 <p align="center"><img src="icon.png" alt="PowerBGP icon" width="128"></p>
 
 [![PowerShell Gallery](https://img.shields.io/powershellgallery/v/PowerBGP?label=PSGallery)](https://www.powershellgallery.com/packages/PowerBGP)
+[![Tests](https://github.com/erikgraa/PowerBGP/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/erikgraa/PowerBGP/actions/workflows/tests.yml)
 
 Stand up **BGP** and **BFD** test peers straight from PowerShell, and craft any packet byte by byte. 🧪
 
