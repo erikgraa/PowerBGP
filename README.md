@@ -278,7 +278,21 @@ Ideas, roughly in the order I would tackle them:
 
 ## 🐳 Container
 
-A ready-made image (amd64 and arm64) is published to GHCR on each release:
+A ready-made image (amd64 and arm64) is published to GHCR on each release. Relevant fixes merged to `main` also publish `nightly`, `date-YYYYMMDD` (UTC), and `sha-<full commit SHA>` tags. Module code, the module manifest/loader, container build inputs, and the container workflow trigger these builds; documentation-only changes do not. Every publication still passes the amd64 module-import smoke test before the multiarchitecture push.
+
+Release tagging is unchanged: version and major/minor tags plus `latest`. Manual builds remain smoke-test-only unless **push** is selected, and non-release manual publications keep `dispatch`. There is no scheduled rebuild; `nightly` tracks the latest relevant main build.
+
+The **Container retention** workflow runs daily at 03:23 UTC. It deletes only package versions older than 30 days (both creation and update time) whose **every** tag is a recognized `date-YYYYMMDD` or hexadecimal `sha-` tag. Recent/future dates, `latest`, `nightly`, release tags, `dispatch`, unknown tags, and all untagged versions are preserved. Index children, nested manifests, and OCI subjects are protected even when they also carry expired tags. Untagged build attestations/architecture manifests can accumulate intentionally: they are never blindly pruned.
+
+Cleanup reads every package-version page and verifies registry manifests by digest before deleting anything. API errors, incomplete/malformed data, or inventory changes stop cleanup. Publishing and retention share a non-cancelling concurrency group. GHCR must grant this repository's `GITHUB_TOKEN` package **admin** access for deletion (`packages: write` alone does not grant package administration); failed authorization stops the run. External publishers do not share this lock, so avoid concurrent external retagging: the API has no atomic compare-and-delete, although inventory is rechecked before each deletion.
+
+Run **Container retention** manually on `main` with its default **dry_run** input to inspect candidates without deletion. Clearing that input explicitly applies the policy. Fixture tests make no network calls and can be run locally with Node.js 22 or later:
+
+```powershell
+node --test tools/Container-Retention.Tests.mjs
+```
+
+Use the latest release:
 
 ```bash
 podman run -it --rm --network host ghcr.io/erikgraa/powerbgp:latest

@@ -1,0 +1,61 @@
+name: Container retention
+
+on:
+  schedule:
+    - cron: '23 3 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Only report old versions; do not delete'
+        type: boolean
+        default: true
+  push:
+    branches: [main]
+    paths:
+      - 'tools/Container-Retention*.mjs'
+      - '.github/workflows/container-retention.yml'
+  pull_request:
+    paths:
+      - 'tools/Container-Retention*.mjs'
+      - '.github/workflows/container-retention.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: powerbgp-ghcr
+  cancel-in-progress: false
+
+jobs:
+  fixtures:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Retention fixtures (no network or deletion)
+        run: node --test tools/Container-Retention.Tests.mjs
+
+  cleanup:
+    needs: fixtures
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Retain 30 days of dated and SHA versions
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPLY: ${{ github.event_name == 'schedule' || inputs.dry_run == false }}
+        run: |
+          if [ "$APPLY" = 'true' ]; then
+            node tools/Container-Retention.mjs --apply
+          else
+            node tools/Container-Retention.mjs --dry-run
+          fi

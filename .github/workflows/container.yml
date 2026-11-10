@@ -2,7 +2,25 @@ name: Container
 
 on:
   push:
+    branches: [main]
     tags: ['v*']
+    paths:
+      - 'Public/**'
+      - 'Private/**'
+      - 'PowerBGP.psd1'
+      - 'PowerBGP.psm1'
+      - 'Containerfile'
+      - '.dockerignore'
+      - '.github/workflows/container.yml'
+  pull_request:
+    paths:
+      - 'Public/**'
+      - 'Private/**'
+      - 'PowerBGP.psd1'
+      - 'PowerBGP.psm1'
+      - 'Containerfile'
+      - '.dockerignore'
+      - '.github/workflows/container.yml'
   workflow_dispatch:
     inputs:
       push:
@@ -13,6 +31,10 @@ on:
 permissions:
   contents: read
   packages: write
+
+concurrency:
+  group: powerbgp-ghcr
+  cancel-in-progress: false
 
 env:
   IMAGE: ghcr.io/${{ github.repository_owner }}/powerbgp
@@ -47,6 +69,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Dated main tag
+        id: date
+        run: echo "tag=date-$(date -u +%Y%m%d)" >> "$GITHUB_OUTPUT"
+
       - name: Image tags
         id: meta
         uses: docker/metadata-action@v5
@@ -56,7 +82,10 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable=${{ github.ref_type == 'tag' }}
-            type=raw,value=dispatch,enable=${{ github.ref_type != 'tag' }}
+            type=raw,value=dispatch,enable=${{ github.event_name == 'workflow_dispatch' && github.ref_type != 'tag' }}
+            type=raw,value=nightly,enable=${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+            type=raw,value=${{ steps.date.outputs.tag }},enable=${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+            type=sha,format=long,enable=${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
           labels: |
             org.opencontainers.image.description=PowerBGP in a PowerShell container. Lab use only.
 
