@@ -13,8 +13,8 @@ const indexType = 'application/vnd.oci.image.index.v1+json';
 const image = { schemaVersion: 2, mediaType: imageType, config: { digest: digest(900) }, layers: [] };
 const index = (...ids) => ({ schemaVersion: 2, mediaType: indexType, manifests: ids.map(id => ({ digest: digest(id), mediaType: imageType })) });
 const version = (id, tags, created = old, updated = created) => ({
-  id, name: digest(id), package_type: 'container', created_at: created, updated_at: updated,
-  metadata: { container: { tags } },
+  id, name: digest(id), created_at: created, updated_at: updated,
+  metadata: { package_type: 'container', container: { tags } },
 });
 const clientFixture = (versions, manifests = {}) => {
   const deleted = [];
@@ -85,7 +85,8 @@ test('invalid inventory is rejected, including duplicate ids/digests and missing
     [{ ...version(1, [sha]), created_at: undefined }],
     [{ ...version(1, [sha]), updated_at: 'invalid' }],
     [{ ...version(1, [sha]), metadata: {} }],
-    [{ ...version(1, [sha]), package_type: 'npm' }],
+    [{ ...version(1, [sha]), metadata: { package_type: 'npm', container: { tags: [sha] } } }],
+    [{ ...version(1, [sha]), package_type: 'container', metadata: { container: { tags: [sha] } } }],
   ]) assert.throws(() => validateVersions(versions));
 });
 

@@ -23,7 +23,7 @@ export function validateVersions(versions) {
   for (const version of versions) {
     if (!Number.isSafeInteger(version.id) || version.id <= 0 || ids.has(version.id) ||
         !digestPattern.test(version.name) || digests.has(version.name) ||
-        version.package_type !== 'container' || !Array.isArray(version.metadata?.container?.tags) ||
+        version.metadata?.package_type !== 'container' || !Array.isArray(version.metadata?.container?.tags) ||
         version.metadata.container.tags.some(tag => typeof tag !== 'string' || !tag.length)) {
       throw new Error('Invalid or duplicate container version');
     }
